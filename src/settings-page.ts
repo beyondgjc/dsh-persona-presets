@@ -143,19 +143,22 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
     }), `persona-settings: ${path}`)
   }
 
-  // GET /api/persona-settings-598/read — the three slots as rendered views.
-  // Routes carry the -598 namespace marker (whale598 precedent): the
-  // webserver THROWS on duplicate path registration, so a generic
-  // /api/persona-settings could take the whole composition down.
+  // GET /api/persona-settings-598/read — the three slots as rendered views
+  // plus the user-assigned display names (client falls back to the built-in
+  // preset labels for absent keys). Routes carry the -598 namespace marker
+  // (whale598 precedent): the webserver THROWS on duplicate path
+  // registration, so a generic /api/persona-settings could take the whole
+  // composition down.
   registerRoute('/api/persona-settings-598/read', {
     GET: (_req, res) => {
-      writeJson(res, 200, { slots: slotViews(home) })
+      writeJson(res, 200, { slots: slotViews(home), names: readPersonaSettings(home).presetNames ?? {} })
     },
   })
 
   // POST /api/persona-settings-598/update — whitelist merge, then persist. The
-  // client posts { personas: { <presetId>: text } }; an empty string deletes
-  // the slot (reset-to-default), a non-string is ignored.
+  // client posts { personas: { <presetId>: text } } and/or
+  // { presetNames: { <presetId>: name } }; an empty string deletes the slot
+  // (reset-to-default), a non-string is ignored.
   registerRoute('/api/persona-settings-598/update', {
     POST: async (req, res) => {
       const body = await readJsonBody(req)
@@ -163,10 +166,10 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
         writeJson(res, 422, { error: 'invalid JSON body' })
         return
       }
-      const next = mergePersonas(readPersonaSettings(home), body as { personas?: unknown })
+      const next = mergePersonas(readPersonaSettings(home), body as { personas?: unknown; presetNames?: unknown })
       mkdirSync(dirname(settingsFilePath(home)), { recursive: true })
       writeFileSync(settingsFilePath(home), `${JSON.stringify(next, null, 2)}\n`, 'utf8')
-      writeJson(res, 200, { ok: true, slots: slotViews(home) })
+      writeJson(res, 200, { ok: true, slots: slotViews(home), names: next.presetNames ?? {} })
     },
   })
 }

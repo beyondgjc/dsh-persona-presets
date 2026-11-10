@@ -69,3 +69,36 @@ describe('mergePersonas', () => {
     expect([...PERSONA_PRESET_IDS]).toEqual(['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3'])
   })
 })
+
+describe('mergePersonas presetNames (agentic-pet 33a1e9a semantics)', () => {
+  it('sets a whitelist name, trimmed and capped at 60', () => {
+    const long = '名'.repeat(70)
+    const next = mergePersonas({}, { presetNames: { 'persona-598-custom-1': '  乖女儿 ', 'persona-598-custom-2': long } })
+    expect(next.presetNames?.['persona-598-custom-1']).toBe('乖女儿')
+    expect(next.presetNames?.['persona-598-custom-2']).toHaveLength(60)
+  })
+
+  it('deletes the key on an empty string (revert to the built-in label)', () => {
+    const current = { presetNames: { 'persona-598-custom-1': '乖女儿' } }
+    const next = mergePersonas(current, { presetNames: { 'persona-598-custom-1': '  ' } })
+    expect(next.presetNames).toEqual({})
+  })
+
+  it('ignores non-string values and whitelist outsiders', () => {
+    const next = mergePersonas({}, { presetNames: { 'persona-598-custom-1': 42, whale598: 'x' } })
+    expect(next.presetNames).toEqual({})
+  })
+
+  it('keeps absent keys (partial patch)', () => {
+    const current = { presetNames: { 'persona-598-custom-1': '一号名' } }
+    const next = mergePersonas(current, { presetNames: { 'persona-598-custom-3': '三号名' } })
+    expect(next.presetNames).toEqual({ 'persona-598-custom-1': '一号名', 'persona-598-custom-3': '三号名' })
+  })
+
+  it('a personas patch alone leaves presetNames untouched', () => {
+    const current = { presetNames: { 'persona-598-custom-1': '一号名' } }
+    const next = mergePersonas(current, { personas: { 'persona-598-custom-1': '新卡' } })
+    expect(next.presetNames).toEqual({ 'persona-598-custom-1': '一号名' })
+    expect(next.personas).toEqual({ 'persona-598-custom-1': '新卡' })
+  })
+})

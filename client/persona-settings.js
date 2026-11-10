@@ -21,10 +21,11 @@ window.__ModuleLoader__.load({
     var UPDATE = '/api/persona-settings-598/update'
 
     var SLOT_IDS = ['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3']
+    // 内置预设显示名（对应预设标注 + 取名的缺省值）——与 yml config.name 一致。
     var SLOT_LABELS = {
-      'persona-598-custom-1': '自定义1',
-      'persona-598-custom-2': '自定义2',
-      'persona-598-custom-3': '自定义3',
+      'persona-598-custom-1': '人设-自定义1',
+      'persona-598-custom-2': '人设-自定义2',
+      'persona-598-custom-3': '人设-自定义3',
     }
 
     // Theme-neutral: inherit foreground, translucent borders — readable on
@@ -68,6 +69,11 @@ window.__ModuleLoader__.load({
       var slotsState = useState(null)
       var slots = slotsState[0]
       var setSlots = slotsState[1]
+      // 用户给各槽取的显示名（data.names = presetNames 原始映射，缺席键回落
+      // 内置标签）。改名走同一 update 路由（agentic-pet presetNames 语义）。
+      var namesState = useState({})
+      var names = namesState[0]
+      var setNames = namesState[1]
       var msgState = useState('')
       var msg = msgState[0]
       var setMsg = msgState[1]
@@ -86,11 +92,45 @@ window.__ModuleLoader__.load({
       var refresh = function () {
         fetch(READ, { credentials: 'same-origin' })
           .then(function (r) { return r.json() })
-          .then(function (d) { if (d && d.slots) setSlots(d.slots) })
+          .then(function (d) {
+            if (d && d.slots) setSlots(d.slots)
+            if (d && d.names) setNames(d.names)
+          })
           .catch(function (e) { setMsg('读取失败: ' + ((e && e.message) || e)) })
       }
       useEffect(refresh, [])
 
+      // 人设槽显示名：用户取名优先，缺省回落内置标签——与宠物改名同款。
+      var presetNameOf = function (presetId) {
+        var custom = names && names[presetId]
+        return custom ? String(custom) : (SLOT_LABELS[presetId] || presetId)
+      }
+      var commitPresetName = function (presetId, value) {
+        var current = (names && names[presetId]) || ''
+        var v = String(value || '').trim()
+        if (v === current) return
+        setBusy(true)
+        setMsg('')
+        var next = Object.assign({}, names || {})
+        if (v === '') delete next[presetId]
+        else next[presetId] = v
+        fetch(UPDATE, {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ presetNames: next }),
+        })
+          .then(function (r) { return r.json() })
+          .then(function (d) {
+            if (d && d.ok && d.names) {
+              setNames(d.names)
+              setMsg(v === '' ? '已恢复内置名（' + SLOT_LABELS[presetId] + '）' : '人设名已保存')
+            } else {
+              setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
+            }
+          })
+          .catch(function (e) { setMsg('请求失败: ' + ((e && e.message) || e)) })
+          .finally(function () { setBusy(false) })
+      }
       var textOf = function (presetId) {
         if (drafts[presetId] !== null && drafts[presetId] !== undefined) return drafts[presetId]
         var slot = slots ? slots[presetId] : null
@@ -101,10 +141,6 @@ window.__ModuleLoader__.load({
       var maxOf = function (presetId) {
         var slot = slots ? slots[presetId] : null
         return (slot && Number(slot.maxLength)) || 8000
-      }
-      var inheritedOf = function (presetId) {
-        var slot = slots ? slots[presetId] : null
-        return slot ? slot.inherited !== false : true
       }
 
       var save = function (presetId, text) {
@@ -120,7 +156,7 @@ window.__ModuleLoader__.load({
             if (d && d.ok && d.slots) {
               setSlots(d.slots)
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
-              setMsg(text.trim() === '' ? '已恢复默认卡（' + SLOT_LABELS[presetId] + '）' : '人设已保存（' + SLOT_LABELS[presetId] + '），下一回合生效')
+              setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '人设已保存（' + presetNameOf(presetId) + '），下一回合生效')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
             }
@@ -131,7 +167,7 @@ window.__ModuleLoader__.load({
 
       return h('div', null,
         h(Section, { title: h('span', null, '人设 ',
-          h('span', { style: { fontSize: 11, fontWeight: 400, color: 'rgba(127,127,127,.9)' } }, '每个预设一张卡 · 保存后下一回合生效')) },
+          h('span', { style: { fontSize: 11, fontWeight: 400, color: 'rgba(127,127,127,.9)' } }, '每个预设一张卡 · 点 ▾ 展开编辑 · 保存后下一回合生效')) },
           SLOT_IDS.map(function (presetId) {
             var hasSlot = slots !== null && slots[presetId] !== undefined && slots[presetId] !== null
             if (slots !== null && !hasSlot) return null // older host: degrade the whole slot
@@ -140,20 +176,22 @@ window.__ModuleLoader__.load({
             var text = textOf(presetId)
             var count = countOf(presetId)
             var max = maxOf(presetId)
-            var label = SLOT_LABELS[presetId] || presetId
+            var displayName = presetNameOf(presetId)
             var toggle = function () {
               setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = !isOpen; return n })()) })
             }
-            var header = h('div', {
-              style: Object.assign({}, row, { marginBottom: 4, cursor: 'pointer', userSelect: 'none' }),
-              onClick: toggle,
-              role: 'button',
-              'aria-expanded': isOpen,
-              title: isOpen ? '收起' : '展开编辑',
-            },
-              h('span', { style: { fontWeight: 700 } }, (isOpen ? '▾ ' : '▸ ') + '人设 · ' + label),
-              hasSlot ? h('span', { style: muted }, inheritedOf(presetId) ? '默认卡' : '独立卡') : null,
-              !isOpen ? h('span', { style: muted }, '点开编辑') : null)
+            // 折叠头照 agentic-pet 人设区最新形态：[▾/▸] + 取名框（uncontrolled
+            // + key 钉生效名，改名后重挂回填）+ 对应预设内置名。清空名字恢复
+            // 内置名；徽记（默认卡/独立卡）已判无用删除。
+            var header = h('div', { style: Object.assign({}, row, { marginBottom: 4 }) },
+              h('button', { type: 'button', onClick: toggle, 'aria-expanded': isOpen, title: isOpen ? '收起' : '展开编辑',
+                style: { border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: '2px 4px', fontWeight: 700, font: 'inherit' } },
+                isOpen ? '▾' : '▸'),
+              h('input', { key: 'pname-' + displayName, style: Object.assign({}, inputStyle, { width: 170, fontWeight: 700 }), defaultValue: displayName, title: '给人设取名；点击空白处或回车生效；清空恢复内置名',
+                onBlur: function (e) { commitPresetName(presetId, e.target.value) },
+                onKeyDown: function (e) { if (e.key === 'Enter') { commitPresetName(presetId, e.target.value); e.target.blur() } },
+                'aria-label': '人设名 · ' + presetId }),
+              h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)))
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
@@ -164,7 +202,7 @@ window.__ModuleLoader__.load({
                 onChange: function (e) {
                   setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = e.target.value; return n })()) })
                 },
-                'aria-label': '人设文本 · ' + label,
+                'aria-label': '人设文本 · ' + displayName,
               }),
               h('div', { style: row },
                 h('button', {
