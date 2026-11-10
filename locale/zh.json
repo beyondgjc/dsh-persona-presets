@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "人设预设",
+    "title": "角色卡预设",
     "description": "人设预设插件：三个自定义 agent 预设，每个预设一张可编辑的角色卡——在设置页「角色卡」区块改写，保存后下一回合生效。",
     "detail": "docs/DETAIL.zh.md"
   }

@@ -1,4 +1,4 @@
-# 人设预设（dsh-persona-presets）
+# 角色卡预设（dsh-persona-presets）
 
 三个自定义 agent 预设，每个预设一张可编辑的角色卡。
 
@@ -13,13 +13,6 @@
 1. 设置页 →「角色卡」→ 展开某个槽位，写下角色卡（身份、性格、说话方式、边界都写这里），保存。
 2. 把会话挂到对应预设（人设-自定义1/2/3），会话就带这张卡。
 3. 改卡不会清空会话记忆——已开始的会话仍带着旧设定的上下文；想彻底换人，新开会话。
-
-## 与桌宠的关系
-
-这些是**通用 agent 预设**，与 dsh-agentic-pet 相互独立：
-
-- 桌宠挂到这些预设上会**失去宠物工具**（pet_say 气泡、pet_do 动作等不可用），退化成普通 agent 会话。
-- 宠物的专属预设（含身体规则与 pet_* 工具）由 dsh-agentic-pet 自带，两套并存、互不干扰。
 
 ## 存储
 
@@ -48,5 +41,5 @@
 ## 技术说明
 
 - 人设行（`dsh-persona-presets/persona`）占据 `deployment:persona-prefix` 段、替换官方 `@deepseek-ai/dsh-persona` 行，`interpolate: false`——用户自由文本永远不会进入严格插值。
-- 预设工具行克隆自 dsh 的 `presets/standard.patch.yml`；该文件演进时需 re-diff（dsh-agentic-pet 同款纪律）。
+- 预设工具行克隆自 dsh 的 `presets/standard.patch.yml`；该文件演进时需 re-diff（tests/presets.spec.ts 深比对会红）。
 - 设置路由走同源回环围栏（非同源/跨站请求 403）。

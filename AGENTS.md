@@ -1,6 +1,6 @@
 # AGENTS.md — dsh-persona-presets
 
-从 dsh-agentic-pet 抽出的通用「预设 + 设置页人设」插件：三个自定义 agent 预设（persona-598-custom-1/2/3），每个预设一张可编辑角色卡。与宠物无关——桌宠挂这些预设会失去 pet_* 工具。
+从 dsh-agentic-pet 抽出的通用「预设 + 设置页人设」插件：三个自定义 agent 预设（persona-598-custom-1/2/3），每个预设一张可编辑角色卡。独立插件，与宠物生态零依赖（仅工程先例引用）。
 
 ## 命令
 
