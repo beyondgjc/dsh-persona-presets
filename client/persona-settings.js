@@ -156,6 +156,8 @@ window.__ModuleLoader__.load({
             if (d && d.ok && d.slots) {
               setSlots(d.slots)
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
+              // 保存成功即收起（编辑→保存→折回）；失败保持展开等用户处理。
+              setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = false; return n })()) })
               setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '角色卡已保存（' + presetNameOf(presetId) + '），下一回合生效')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
@@ -172,7 +174,10 @@ window.__ModuleLoader__.load({
             var hasSlot = slots !== null && slots[presetId] !== undefined && slots[presetId] !== null
             if (slots !== null && !hasSlot) return null // older host: degrade the whole slot
             var draft = drafts[presetId]
-            var isOpen = open[presetId] === true || (draft !== null && draft !== undefined)
+            // 开关说了算：有未保存草稿也允许收起（草稿留在 state 里，重新展开
+            // 原样找回），收起时头部提示「有未保存草稿」——不静默藏字，也不锁死。
+            var isOpen = open[presetId] === true
+            var hasDraft = draft !== null && draft !== undefined
             var text = textOf(presetId)
             var count = countOf(presetId)
             var max = maxOf(presetId)
@@ -191,7 +196,8 @@ window.__ModuleLoader__.load({
                 onBlur: function (e) { commitPresetName(presetId, e.target.value) },
                 onKeyDown: function (e) { if (e.key === 'Enter') { commitPresetName(presetId, e.target.value); e.target.blur() } },
                 'aria-label': '卡名 · ' + presetId }),
-              h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)))
+              h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)),
+              hasDraft && !isOpen ? h('span', { style: { color: '#e8b268', fontSize: 12 } }, '有未保存草稿') : null)
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
