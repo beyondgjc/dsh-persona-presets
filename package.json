@@ -1,0 +1,70 @@
+{
+  "name": "dsh-persona-presets",
+  "description": "Persona presets: a set of custom agent presets, one editable character card each, edited from the settings page",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./persona": "./lib/persona.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./presets/*.patch.yml": "./presets/*.patch.yml",
+    "./client": "./client/persona-settings.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/*.js",
+    "cordis.patch.yml",
+    "presets/**/*",
+    "client/**/*",
+    "locale/*.json",
+    "docs/DETAIL.zh.md"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": [
+        "./cordis.patch.yml",
+        "./presets/persona-custom.patch.yml"
+      ]
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "immediately": true
+    },
+    "manifestVersion": 1
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.5"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.5",
+    "@deepseek-ai/cordis-plugin-include": "1.0.10",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.19.2",
+    "js-yaml": "^4.3.2",
+    "tsdown": "^0.22.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beyondgjc/dsh-persona-presets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/beyondgjc/dsh-persona-presets/issues"
+  }
+}

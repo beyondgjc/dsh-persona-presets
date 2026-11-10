@@ -1,0 +1,13 @@
+# The dsh-persona-presets bundle patch: the local settings surface over the web
+# composition layer. The agent presets themselves register from
+# presets/persona-custom.patch.yml (also declared in dsh.bundle.patch).
+#
+# A patch replaces the targeted row's whole `config`, so the row below
+# restates every key it owns (there are none).
+#
+# ⚠️ A patch file is YAML single-root: exactly ONE top-level `- insert:` — a
+# second top-level entry is silently dropped by the patch applier.
+
+- insert:
+    - id: persona-presets
+      name: 'dsh-persona-presets'
