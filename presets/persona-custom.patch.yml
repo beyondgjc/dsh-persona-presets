@@ -15,7 +15,7 @@
     - id: preset-persona-custom-1
       name: '@deepseek-ai/dsh-agent-preset'
       config:
-        id: persona-custom-1
+        id: persona-598-custom-1
         name: 人设-自定义1
         description: 自定义人设预设（1）：工具目录与标准模式一致，人设卡独立——在设置页「人设」区块编辑这张卡，保存后下一回合生效。
         order: 21
@@ -23,7 +23,7 @@
           - id: persona
             name: 'dsh-persona-presets/persona'
             config:
-              personaKey: persona-custom-1
+              personaKey: persona-598-custom-1
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:
@@ -141,7 +141,7 @@
     - id: preset-persona-custom-2
       name: '@deepseek-ai/dsh-agent-preset'
       config:
-        id: persona-custom-2
+        id: persona-598-custom-2
         name: 人设-自定义2
         description: 自定义人设预设（2）：工具目录与标准模式一致，人设卡独立——在设置页「人设」区块编辑这张卡，保存后下一回合生效。
         order: 22
@@ -149,7 +149,7 @@
           - id: persona
             name: 'dsh-persona-presets/persona'
             config:
-              personaKey: persona-custom-2
+              personaKey: persona-598-custom-2
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:
@@ -267,7 +267,7 @@
     - id: preset-persona-custom-3
       name: '@deepseek-ai/dsh-agent-preset'
       config:
-        id: persona-custom-3
+        id: persona-598-custom-3
         name: 人设-自定义3
         description: 自定义人设预设（3）：工具目录与标准模式一致，人设卡独立——在设置页「人设」区块编辑这张卡，保存后下一回合生效。
         order: 23
@@ -275,7 +275,7 @@
           - id: persona
             name: 'dsh-persona-presets/persona'
             config:
-              personaKey: persona-custom-3
+              personaKey: persona-598-custom-3
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:

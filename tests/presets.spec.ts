@@ -61,7 +61,7 @@ describe('dsh-persona-presets bundle', () => {
 
   it('registers the bundle row and exactly three presets (YAML single root)', () => {
     expect(rows.map(row => row.id)).toEqual([
-      'persona-presets',
+      'persona-presets-598',
       'preset-persona-custom-1',
       'preset-persona-custom-2',
       'preset-persona-custom-3',
@@ -70,7 +70,7 @@ describe('dsh-persona-presets bundle', () => {
   })
 
   it('orders the presets at 21/22/23 with distinct ids and names', () => {
-    expect(presets.map(preset => preset.config?.id)).toEqual(['persona-custom-1', 'persona-custom-2', 'persona-custom-3'])
+    expect(presets.map(preset => preset.config?.id)).toEqual(['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3'])
     expect(presets.map(preset => preset.config?.order)).toEqual([21, 22, 23])
     expect(new Set(presets.map(preset => preset.config?.name)).size).toBe(3)
   })

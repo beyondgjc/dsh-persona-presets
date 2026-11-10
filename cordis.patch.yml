@@ -9,5 +9,5 @@
 # second top-level entry is silently dropped by the patch applier.
 
 - insert:
-    - id: persona-presets
+    - id: persona-presets-598
       name: 'dsh-persona-presets'

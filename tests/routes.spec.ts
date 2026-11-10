@@ -102,17 +102,17 @@ beforeEach(() => {
 describe('persona settings routes', () => {
   it('registers exactly the two paths', () => {
     expect(routes.map(route => route.path).sort()).toEqual([
-      '/api/persona-settings/read',
-      '/api/persona-settings/update',
+      '/api/persona-settings-598/read',
+      '/api/persona-settings-598/update',
     ])
   })
 
   it('GET read on a fresh home answers the three default slots', async () => {
-    const read = routes.find(route => route.path === '/api/persona-settings/read')!
+    const read = routes.find(route => route.path === '/api/persona-settings-598/read')!
     const captured = await drive(read, makeReq('GET'))
     expect(captured.status).toBe(200)
     const slots = jsonOf(captured).slots as Record<string, { value: string; inherited: boolean }>
-    expect(Object.keys(slots).sort()).toEqual(['persona-custom-1', 'persona-custom-2', 'persona-custom-3'])
+    expect(Object.keys(slots).sort()).toEqual(['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3'])
     for (const slot of Object.values(slots)) {
       expect(slot.value).toBe(DEFAULT_PERSONA)
       expect(slot.inherited).toBe(true)
@@ -120,45 +120,45 @@ describe('persona settings routes', () => {
   })
 
   it('POST update persists the whitelist merge and rereads it', async () => {
-    const update = routes.find(route => route.path === '/api/persona-settings/update')!
+    const update = routes.find(route => route.path === '/api/persona-settings-598/update')!
     const captured = await drive(update, makeReq('POST', {
-      personas: { 'persona-custom-1': '  一号卡 ', unknown: 'dropped' },
+      personas: { 'persona-598-custom-1': '  一号卡 ', unknown: 'dropped' },
     }))
     expect(captured.status).toBe(200)
     expect(jsonOf(captured).ok).toBe(true)
     const written = JSON.parse(readFileSync(settingsFilePath(home), 'utf8')) as { personas: Record<string, string> }
-    expect(written.personas).toEqual({ 'persona-custom-1': '一号卡' })
+    expect(written.personas).toEqual({ 'persona-598-custom-1': '一号卡' })
     // The response slots reflect the write: slot 1 owned, the rest inherited.
     const slots = jsonOf(captured).slots as Record<string, { value: string; inherited: boolean }>
-    expect(slots['persona-custom-1']).toEqual({ value: '一号卡', default: DEFAULT_PERSONA, maxLength: 8000, inherited: false })
-    expect(slots['persona-custom-2'].inherited).toBe(true)
+    expect(slots['persona-598-custom-1']).toEqual({ value: '一号卡', default: DEFAULT_PERSONA, maxLength: 8000, inherited: false })
+    expect(slots['persona-598-custom-2'].inherited).toBe(true)
   })
 
   it('POST update with an empty string resets the slot to the default', async () => {
-    const update = routes.find(route => route.path === '/api/persona-settings/update')!
-    await drive(update, makeReq('POST', { personas: { 'persona-custom-1': '一号卡' } }))
-    const captured = await drive(update, makeReq('POST', { personas: { 'persona-custom-1': '' } }))
+    const update = routes.find(route => route.path === '/api/persona-settings-598/update')!
+    await drive(update, makeReq('POST', { personas: { 'persona-598-custom-1': '一号卡' } }))
+    const captured = await drive(update, makeReq('POST', { personas: { 'persona-598-custom-1': '' } }))
     expect(captured.status).toBe(200)
     const slots = jsonOf(captured).slots as Record<string, { inherited: boolean }>
-    expect(slots['persona-custom-1'].inherited).toBe(true)
+    expect(slots['persona-598-custom-1'].inherited).toBe(true)
     expect(existsSync(settingsFilePath(home))).toBe(true)
   })
 
   it('POST update answers 422 on an invalid JSON body', async () => {
-    const update = routes.find(route => route.path === '/api/persona-settings/update')!
+    const update = routes.find(route => route.path === '/api/persona-settings-598/update')!
     const captured = await drive(update, makeReq('POST', 'not-json-object'))
     expect(captured.status).toBe(422)
     expect(jsonOf(captured).error).toBe('invalid JSON body')
   })
 
   it('answers 405 for an unmatched method', async () => {
-    const read = routes.find(route => route.path === '/api/persona-settings/read')!
+    const read = routes.find(route => route.path === '/api/persona-settings-598/read')!
     const captured = await drive(read, makeReq('DELETE'))
     expect(captured.status).toBe(405)
   })
 
   it('answers 403 for a cross-site request', async () => {
-    const read = routes.find(route => route.path === '/api/persona-settings/read')!
+    const read = routes.find(route => route.path === '/api/persona-settings-598/read')!
     const captured = await drive(read, crossSiteReq('GET'))
     expect(captured.status).toBe(403)
   })

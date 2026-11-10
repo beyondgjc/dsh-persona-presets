@@ -1,6 +1,6 @@
 # AGENTS.md — dsh-persona-presets
 
-从 dsh-agentic-pet 抽出的通用「预设 + 设置页人设」插件：三个自定义 agent 预设（persona-custom-1/2/3），每个预设一张可编辑角色卡。与宠物无关——桌宠挂这些预设会失去 pet_* 工具。
+从 dsh-agentic-pet 抽出的通用「预设 + 设置页人设」插件：三个自定义 agent 预设（persona-598-custom-1/2/3），每个预设一张可编辑角色卡。与宠物无关——桌宠挂这些预设会失去 pet_* 工具。
 
 ## 命令
 
@@ -21,7 +21,7 @@ npm run typecheck   # tsc --noEmit
 - `src/settings-page.ts` — 宿主半路由 `/api/persona-settings/read|update`，同源回环围栏（403/405/422/500 语义与 dsh-agentic-pet 对齐）。
 - `client/persona-settings.js` — client 半：设置页「人设」区块，手写 `__ModuleLoader__` bundle，无构建步骤。
 - `presets/persona-custom.patch.yml` — 三预设声明（克隆 dsh standard 工具行）。
-- 存储：`~/.dsh/persona-presets/persona-settings.json`，字段 `personas.<presetId>`（`DSH_HOME` 可改根）。
+- 存储：`~/.dsh/persona-presets-598/persona-settings.json`，字段 `personas.<presetId>`（`DSH_HOME` 可改根）。
 
 ## 铁律
 
@@ -33,3 +33,5 @@ npm run typecheck   # tsc --noEmit
 6. **client 无构建步骤**：ES5 风格手写 bundle；apply 逐 section 降级（safe 包裹），客户端启动审计对 throw 是致命的。
 7. **locale 锚点**：`exports "./locale/*.json"` 与 `docs/DETAIL.zh.md` 必须保留——插件市场详情页读 `locale/<lang>.json` 的 meta.detail。
 8. **npm 源坑**：本机默认源是 npmmirror（只读镜像）——装包可以，发布必须显式 `--registry https://registry.npmjs.org`；js-yaml 停在 ^4.3.2（5.5.0 在镜像是假包）。
+9. **vendor 部署 = rm -rf 后整目录拷**：tsdown 的 chunk 文件名带内容哈希，`cp -r lib DST/` 在目标已存在时是**合并**——新旧 chunk 混杂后 index.js 引用的 chunk 可能缺失，载入即炸。必须 `rm -rf DST/lib && cp -r`，然后逐文件 cmp 复核。
+10. **注册面全家桶 -598**：cordis 插件名/设置区块 slot id/API 路由/预设 id/存储目录全部带 `-598`（whale598 纪律）——cordis 重名、slot 机同 id 同 priority、webserver 重复路径三者都会 throw，改任何一处身份时同步检查 AGENTS 其余各处。

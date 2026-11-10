@@ -143,17 +143,20 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
     }), `persona-settings: ${path}`)
   }
 
-  // GET /api/persona-settings/read — the three slots as rendered views.
-  registerRoute('/api/persona-settings/read', {
+  // GET /api/persona-settings-598/read — the three slots as rendered views.
+  // Routes carry the -598 namespace marker (whale598 precedent): the
+  // webserver THROWS on duplicate path registration, so a generic
+  // /api/persona-settings could take the whole composition down.
+  registerRoute('/api/persona-settings-598/read', {
     GET: (_req, res) => {
       writeJson(res, 200, { slots: slotViews(home) })
     },
   })
 
-  // POST /api/persona-settings/update — whitelist merge, then persist. The
+  // POST /api/persona-settings-598/update — whitelist merge, then persist. The
   // client posts { personas: { <presetId>: text } }; an empty string deletes
   // the slot (reset-to-default), a non-string is ignored.
-  registerRoute('/api/persona-settings/update', {
+  registerRoute('/api/persona-settings-598/update', {
     POST: async (req, res) => {
       const body = await readJsonBody(req)
       if (body === undefined) {

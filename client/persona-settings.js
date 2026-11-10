@@ -17,14 +17,14 @@ window.__ModuleLoader__.load({
     var useState = React.useState
     var useEffect = React.useEffect
 
-    var READ = '/api/persona-settings/read'
-    var UPDATE = '/api/persona-settings/update'
+    var READ = '/api/persona-settings-598/read'
+    var UPDATE = '/api/persona-settings-598/update'
 
-    var SLOT_IDS = ['persona-custom-1', 'persona-custom-2', 'persona-custom-3']
+    var SLOT_IDS = ['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3']
     var SLOT_LABELS = {
-      'persona-custom-1': '自定义1',
-      'persona-custom-2': '自定义2',
-      'persona-custom-3': '自定义3',
+      'persona-598-custom-1': '自定义1',
+      'persona-598-custom-2': '自定义2',
+      'persona-598-custom-3': '自定义3',
     }
 
     // Theme-neutral: inherit foreground, translucent borders — readable on
@@ -198,7 +198,7 @@ window.__ModuleLoader__.load({
             return slotsApi.register(
               // id = the bundle row's cordis plugin name (src/index.ts `name`),
               // per the pet-surface precedent in dsh-agentic-pet's client.
-              { name: 'settings.section', id: 'persona-presets', order: 41, label: '人设' },
+              { name: 'settings.section', id: 'persona-presets-598', order: 41, label: '人设' },
               function (props) {
                 try { console.log('[persona-settings] section render fn invoked') } catch (x) { /* ignore */ }
                 return h(SafeZone, null, h(PersonaPage, { close: props && props.close }))

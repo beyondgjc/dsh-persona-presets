@@ -4,7 +4,7 @@
 
 ## 它做什么
 
-- 安装后新增三个 agent 预设：**人设-自定义1 / 人设-自定义2 / 人设-自定义3**（persona-custom-1/2/3）。工具目录与标准模式完全一致。
+- 安装后新增三个 agent 预设：**人设-自定义1 / 人设-自定义2 / 人设-自定义3**（persona-598-custom-1/2/3）。工具目录与标准模式完全一致。
 - 设置页新增「**人设**」区块：每个预设一张卡，展开即可编辑。保存后下一回合生效，无需重启。
 - 卡是预设身份的**全部内容**——没有附加的固定规则。清空并保存即回到默认卡。
 
@@ -23,12 +23,12 @@
 
 ## 存储
 
-`~/.dsh/persona-presets/persona-settings.json`（`DSH_HOME` 环境变量可改根）：
+`~/.dsh/persona-presets-598/persona-settings.json`（`DSH_HOME` 环境变量可改根）：
 
 ```json
 {
   "personas": {
-    "persona-custom-1": "你的角色卡文本……"
+    "persona-598-custom-1": "你的角色卡文本……"
   }
 }
 ```
@@ -41,9 +41,9 @@
 
 | 预设 id | 名称 | order |
 | --- | --- | --- |
-| persona-custom-1 | 人设-自定义1 | 21 |
-| persona-custom-2 | 人设-自定义2 | 22 |
-| persona-custom-3 | 人设-自定义3 | 23 |
+| persona-598-custom-1 | 人设-自定义1 | 21 |
+| persona-598-custom-2 | 人设-自定义2 | 22 |
+| persona-598-custom-3 | 人设-自定义3 | 23 |
 
 ## 技术说明
 

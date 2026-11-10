@@ -10,8 +10,10 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { installSettingsPage } from './settings-page.ts'
 
-/** Stable Cordis plugin name. */
-export const name = 'persona-presets'
+/** Stable Cordis plugin name. The -598 suffix is the owner's namespace
+ * marker (whale598 precedent) — cordis rejects duplicate plugin names, so
+ * this is one of the bundle's collision-proofed identities. */
+export const name = 'persona-presets-598'
 
 /**
  * The webserver service backs the settings routes. It is a sibling row's
