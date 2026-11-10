@@ -1,6 +1,6 @@
 /**
  * The settings page's host half: local HTTP routes backing the settings
- * sidebar's 「人设」 section (the client half lives in ./client/
+ * sidebar's 「角色卡」 section (the client half lives in ./client/
  * persona-settings.js and registers through the web GUI's slot system, per
  * the dsh-qqbot precedent). Routes use the raw handler form (resource-typed
  * routes postdate rc.3) behind a same-origin loopback fence, one registration

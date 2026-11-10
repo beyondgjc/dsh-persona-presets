@@ -12,7 +12,7 @@
  *
  * The card lives in this plugin's settings file (persona-presets/
  * persona-settings.json, `personas.<presetId>`, edited from the settings
- * page's 「人设」 section; hand-editing works the same): the section text is a
+ * page's 「角色卡」 section; hand-editing works the same): the section text is a
  * function re-read at every assembly, so a saved edit lands on the next turn
  * with no restart. User free text must never enter strict {{variable}}
  * interpolation — an unknown reference makes the whole assembly throw — so
@@ -69,7 +69,7 @@ function systemPromptOf(ctx: Context): PromptRegistryFace {
  * "reset to default" are the same state.
  */
 export const DEFAULT_PERSONA =
-  '你是用户的 AI 助手，说话简洁、就事论事。这张卡是你人设的全部来源：用户可以在设置页「人设」区块改写它，赋予你新的身份、性格与说话方式。'
+  '你是用户的 AI 助手，说话简洁、就事论事。这张卡是你人设的全部来源：用户可以在设置页「角色卡」区块改写它，赋予你新的身份、性格与说话方式。'
 
 /** Upper bound for the user-edited card, enforced by the settings merge. A
  * runaway card would inflate every session prompt; the sync reader applies

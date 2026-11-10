@@ -19,7 +19,7 @@ npm run typecheck   # tsc --noEmit
 - `src/persona.ts` — 人设行（presets 以 `dsh-persona-presets/persona` 挂载）：占据 `deployment:persona-prefix` 段、替换官方 `@deepseek-ai/dsh-persona`，text 是每次组装实时读文件的函数（改动下回合生效，无缓存）。
 - `src/merge.ts` — 白名单合并 + 文件装载（纯函数，vitest 直测）。
 - `src/settings-page.ts` — 宿主半路由 `/api/persona-settings/read|update`，同源回环围栏（403/405/422/500 语义与 dsh-agentic-pet 对齐）。
-- `client/persona-settings.js` — client 半：设置页「人设」区块，手写 `__ModuleLoader__` bundle，无构建步骤。
+- `client/persona-settings.js` — client 半：设置页「角色卡」区块，手写 `__ModuleLoader__` bundle，无构建步骤。
 - `presets/persona-custom.patch.yml` — 三预设声明（克隆 dsh standard 工具行）。
 - 存储：`~/.dsh/persona-presets-598/persona-settings.json`，字段 `personas.<presetId>`（`DSH_HOME` 可改根）。
 

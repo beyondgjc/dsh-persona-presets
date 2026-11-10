@@ -1,5 +1,5 @@
 /* persona-settings — browser half (hand-written __ModuleLoader__ bundle, no
- * build step, dsh-qqbot precedent). Registers a 「人设」 section into the
+ * build step, dsh-qqbot precedent). Registers a 「角色卡」 section into the
  * desktop settings sidebar via the slot system; data goes through the host
  * half's same-origin routes (/api/persona-settings/*). The client startup
  * audit is fatal on throw — apply degrades section by section, never failing
@@ -34,11 +34,11 @@ window.__ModuleLoader__.load({
     var cardTitle = { fontWeight: 700, fontSize: 14, margin: '2px 0 8px' }
     var row = { display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0', fontSize: 13, flexWrap: 'wrap' }
     var muted = { color: 'rgba(127,127,127,.9)', fontSize: 12 }
-    var textareaStyle = {
-      width: '100%', minHeight: 96, resize: 'vertical', lineHeight: 1.5, padding: '6px 8px',
+    var inputStyle = {
       border: '1px solid rgba(127,127,127,.4)', borderRadius: 6,
       background: 'transparent', color: 'inherit', font: 'inherit',
     }
+    var textareaStyle = Object.assign({}, inputStyle, { width: '100%', minHeight: 96, resize: 'vertical', lineHeight: 1.5, padding: '6px 8px' })
     function btnStyle(variant) {
       var base = { border: '1px solid rgba(127,127,127,.4)', borderRadius: 6, cursor: 'pointer', font: 'inherit', fontSize: 12, padding: '3px 12px', background: 'transparent', color: 'inherit' }
       if (variant === 'primary') return Object.assign(base, { fontWeight: 700, borderColor: 'rgba(124,108,240,.6)' })
@@ -123,7 +123,7 @@ window.__ModuleLoader__.load({
           .then(function (d) {
             if (d && d.ok && d.names) {
               setNames(d.names)
-              setMsg(v === '' ? '已恢复内置名（' + SLOT_LABELS[presetId] + '）' : '人设名已保存')
+              setMsg(v === '' ? '已恢复内置名（' + SLOT_LABELS[presetId] + '）' : '卡名已保存')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
             }
@@ -156,7 +156,7 @@ window.__ModuleLoader__.load({
             if (d && d.ok && d.slots) {
               setSlots(d.slots)
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
-              setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '人设已保存（' + presetNameOf(presetId) + '），下一回合生效')
+              setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '角色卡已保存（' + presetNameOf(presetId) + '），下一回合生效')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
             }
@@ -166,7 +166,7 @@ window.__ModuleLoader__.load({
       }
 
       return h('div', null,
-        h(Section, { title: h('span', null, '人设 ',
+        h(Section, { title: h('span', null, '角色卡 ',
           h('span', { style: { fontSize: 11, fontWeight: 400, color: 'rgba(127,127,127,.9)' } }, '每个预设一张卡 · 点 ▾ 展开编辑 · 保存后下一回合生效')) },
           SLOT_IDS.map(function (presetId) {
             var hasSlot = slots !== null && slots[presetId] !== undefined && slots[presetId] !== null
@@ -187,10 +187,10 @@ window.__ModuleLoader__.load({
               h('button', { type: 'button', onClick: toggle, 'aria-expanded': isOpen, title: isOpen ? '收起' : '展开编辑',
                 style: { border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: '2px 4px', fontWeight: 700, font: 'inherit' } },
                 isOpen ? '▾' : '▸'),
-              h('input', { key: 'pname-' + displayName, style: Object.assign({}, inputStyle, { width: 170, fontWeight: 700 }), defaultValue: displayName, title: '给人设取名；点击空白处或回车生效；清空恢复内置名',
+              h('input', { key: 'pname-' + displayName, style: Object.assign({}, inputStyle, { width: 170, fontWeight: 700 }), defaultValue: displayName, title: '给这张卡取名；点击空白处或回车生效；清空恢复内置名',
                 onBlur: function (e) { commitPresetName(presetId, e.target.value) },
                 onKeyDown: function (e) { if (e.key === 'Enter') { commitPresetName(presetId, e.target.value); e.target.blur() } },
-                'aria-label': '人设名 · ' + presetId }),
+                'aria-label': '卡名 · ' + presetId }),
               h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)))
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
             return h('div', { key: presetId, style: { marginBottom: 14 } },
@@ -202,18 +202,18 @@ window.__ModuleLoader__.load({
                 onChange: function (e) {
                   setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = e.target.value; return n })()) })
                 },
-                'aria-label': '人设文本 · ' + displayName,
+                'aria-label': '角色卡文本 · ' + displayName,
               }),
               h('div', { style: row },
                 h('button', {
                   style: btnStyle('primary'), disabled: busy || draft === null || draft === undefined,
                   onClick: function () { save(presetId, text) },
-                }, '保存人设'),
+                }, '保存角色卡'),
                 h('button', { style: btnStyle(), disabled: busy, onClick: function () { save(presetId, '') } }, '恢复默认'),
                 h('span', { style: count > max ? { color: '#ff7369', fontSize: 12 } : muted }, String(count) + ' / ' + String(max) + ' 字')))
           }),
           msg ? h('div', { style: Object.assign({ margin: '4px 0' }, muted) }, msg) : null,
-          h(Hint, null, '每个预设一张角色卡：把会话挂到对应预设（人设-自定义1/2/3），它就带这张卡。'),
+          h(Hint, null, '每个预设一张角色卡：把会话挂到对应预设（人设-自定义1/2/3），它就带这张卡。卡片就是你给它设定的人设。'),
           h(Hint, null, '清空并保存即回到默认卡；改动下一次对话就生效，无需重启。这些是通用 agent 预设——桌宠挂上去会失去宠物工具（气泡/动作），宠物预设请用 dsh-agentic-pet 自带的。')))
     }
 
@@ -236,7 +236,7 @@ window.__ModuleLoader__.load({
             return slotsApi.register(
               // id = the bundle row's cordis plugin name (src/index.ts `name`),
               // per the pet-surface precedent in dsh-agentic-pet's client.
-              { name: 'settings.section', id: 'persona-presets-598', order: 41, label: '人设' },
+              { name: 'settings.section', id: 'persona-presets-598', order: 41, label: '角色卡' },
               function (props) {
                 try { console.log('[persona-settings] section render fn invoked') } catch (x) { /* ignore */ }
                 return h(SafeZone, null, h(PersonaPage, { close: props && props.close }))

@@ -3,7 +3,7 @@
 三个自定义 agent 预设，每个预设一张可编辑的角色卡——把「预设 + 设置页人设」从 dsh-agentic-pet 抽出来的通用插件，与宠物无关，任何 DSH 用户可装。
 
 - **预设**：人设-自定义1/2/3（persona-598-custom-1/2/3），工具目录 = 标准模式克隆，人设行替换官方 `@deepseek-ai/dsh-persona`。
-- **设置页**：「人设」区块，每槽一张卡（可取名），保存后下一回合生效（prompt 段每次组装实时读文件，无缓存无重启）。
+- **设置页**：「角色卡」区块，每槽一张卡（可取名），保存后下一回合生效（prompt 段每次组装实时读文件，无缓存无重启）。
 - **存储**：`~/.dsh/persona-presets-598/persona-settings.json`，字段 `personas.<presetId>`，上限 8000 字/卡。
 - **通用性**：桌宠挂这些预设会失去 pet_* 工具；宠物专属预设由 dsh-agentic-pet 自带，两套并存。
 
@@ -27,7 +27,7 @@ src/index.ts           束行：注册设置路由（inject webServer）
 src/persona.ts         人设行：deployment:persona-prefix 段，实时读卡
 src/merge.ts           白名单合并（空串=删槽=回落默认卡）+ 文件装载
 src/settings-page.ts   宿主半：/api/persona-settings/read|update，同源围栏
-client/persona-settings.js  client 半：设置页「人设」区块（手写 bundle，无构建）
+client/persona-settings.js  client 半：设置页「角色卡」区块（手写 bundle，无构建）
 presets/persona-custom.patch.yml  三预设（单根 - insert，克隆 standard 工具行）
 ```
 
