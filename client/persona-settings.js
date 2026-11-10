@@ -220,7 +220,7 @@ window.__ModuleLoader__.load({
           }),
           msg ? h('div', { style: Object.assign({ margin: '4px 0' }, muted) }, msg) : null,
           h(Hint, null, '每个预设一张角色卡：把会话挂到对应预设（人设-自定义1/2/3），它就带这张卡。卡片就是你给它设定的人设。'),
-          h(Hint, null, '清空并保存即回到默认卡；改动下一次对话就生效，无需重启。这些是通用 agent 预设——桌宠挂上去会失去宠物工具（气泡/动作），宠物预设请用 dsh-agentic-pet 自带的。')))
+          h(Hint, null, '清空并保存即回到默认卡；改动下一次对话就生效，无需重启。')))
     }
 
     function apply(ctx) {
