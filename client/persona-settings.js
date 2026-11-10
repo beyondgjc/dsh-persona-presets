@@ -190,14 +190,23 @@ window.__ModuleLoader__.load({
         var slotsApi = ctx.slots
         if (!slotsApi) { console.warn('[persona-settings] slots unavailable'); return }
         slotsApi.inject('settings.section', function () {
-          return slotsApi.register(
-            // id = the bundle row's cordis plugin name (src/index.ts `name`),
-            // per the pet-surface precedent in dsh-agentic-pet's client.
-            { name: 'settings.section', id: 'persona-presets', order: 41, label: '人设' },
-            function (props) {
-              try { console.log('[persona-settings] section render fn invoked') } catch (x) { /* ignore */ }
-              return h(SafeZone, null, h(PersonaPage, { close: props && props.close }))
-            })
+          // Duplicate-id collision (another bundle claiming 'persona-presets')
+          // must degrade OUR section only: a throw inside this callback runs
+          // in the slot machinery's notification pass, which is shared with
+          // every other plugin's registration — it must never bubble.
+          try {
+            return slotsApi.register(
+              // id = the bundle row's cordis plugin name (src/index.ts `name`),
+              // per the pet-surface precedent in dsh-agentic-pet's client.
+              { name: 'settings.section', id: 'persona-presets', order: 41, label: '人设' },
+              function (props) {
+                try { console.log('[persona-settings] section render fn invoked') } catch (x) { /* ignore */ }
+                return h(SafeZone, null, h(PersonaPage, { close: props && props.close }))
+              })
+          } catch (e) {
+            try { console.warn('[persona-settings] settings.section register failed (id clash?): ' + String((e && e.message) || e)) } catch (x) { /* ignore */ }
+            return function () { /* no-op disposer keeps the inject contract */ }
+          }
         })
       })
     }
