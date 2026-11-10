@@ -49,6 +49,20 @@ window.__ModuleLoader__.load({
     function Hint(props) {
       return h('div', { style: Object.assign({ margin: '6px 0 2px' }, muted) }, props.children)
     }
+    // Diagnostic boundary: a render crash inside the section displays in the
+    // panel itself — the host's slot machinery contains entry crashes and
+    // reports them off-console, which reads as an empty pane.
+    class SafeZone extends React.Component {
+      constructor(props) { super(props); this.state = { err: null } }
+      static getDerivedStateFromError(err) { return { err } }
+      render() {
+        if (this.state.err) {
+          return h('pre', { style: { color: '#ff7369', whiteSpace: 'pre-wrap', fontSize: 12, margin: '8px 0' } },
+            '[persona-settings] RENDER ERROR: ' + ((this.state.err && this.state.err.stack) || String(this.state.err)))
+        }
+        return this.props.children
+      }
+    }
 
     function PersonaPage() {
       var slotsState = useState(null)
@@ -67,7 +81,7 @@ window.__ModuleLoader__.load({
       var setDrafts = draftsState[1]
       var openState = useState({})
       var open = openState[0]
-      var setOpen = setOpenState[1]
+      var setOpen = openState[1]
 
       var refresh = function () {
         fetch(READ, { credentials: 'same-origin' })
@@ -180,7 +194,10 @@ window.__ModuleLoader__.load({
             // id = the bundle row's cordis plugin name (src/index.ts `name`),
             // per the pet-surface precedent in dsh-agentic-pet's client.
             { name: 'settings.section', id: 'persona-presets', order: 41, label: '人设' },
-            function (props) { return h(PersonaPage, { close: props && props.close }) })
+            function (props) {
+              try { console.log('[persona-settings] section render fn invoked') } catch (x) { /* ignore */ }
+              return h(SafeZone, null, h(PersonaPage, { close: props && props.close }))
+            })
         })
       })
     }
