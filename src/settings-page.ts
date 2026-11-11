@@ -16,7 +16,6 @@ import type { Context } from '@deepseek-ai/cordis'
 import { DEFAULT_PERSONA, MAX_PERSONA_CHARS, readPersonaCard } from './persona.ts'
 import { PERSONA_PRESET_IDS, dshHome, settingsFilePath } from './paths.ts'
 import { mergePersonas, readPersonaSettings } from './merge.ts'
-import { PRESET_CARDS } from './preset-cards.ts'
 
 /** Structural face of the host webserver — only the one member this module
  * needs. The authoritative declarations live in the host webserver package,
@@ -169,7 +168,7 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
   // composition down.
   registerRoute('/api/persona-settings-598/read', {
     GET: (_req, res) => {
-      writeJson(res, 200, { slots: slotViews(home), names: readPersonaSettings(home).presetNames ?? {}, presetCards: PRESET_CARDS })
+      writeJson(res, 200, { slots: slotViews(home), names: readPersonaSettings(home).presetNames ?? {} })
     },
   })
 

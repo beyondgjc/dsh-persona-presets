@@ -33,10 +33,14 @@ window.__ModuleLoader__.load({
       'persona-598-custom-3': '人设-自定义3',
     }
 
-    // 预制人设（快速体验）：文案单一真源在宿主（src/preset-cards.ts），read
-    // 路由下发到 presetCards；三槽开箱即各带一张（槽1=猫娘/2=黑客/3=侠客，
-    // 由 readPersonaCard 回落链生效），chips 只是「改乱了回到原版/交叉试卡」
-    // 的填草稿快捷方式——已有未保存草稿且内容不同时 confirm 防覆盖。
+    // 三槽开箱各带一张预制人设（槽1=猫娘/2=黑客/3=侠客，文案真源在宿主
+    // src/preset-cards.ts，经 readPersonaCard 回落链生效）；未取名时槽名
+    // 默认显示对应人设名——与 preset-cards.ts 的 label 手工对齐。
+    var SLOT_PERSONA_NAMES = {
+      'persona-598-custom-1': '喵娘',
+      'persona-598-custom-2': '零',
+      'persona-598-custom-3': '墨隐',
+    }
 
     // Theme-neutral: inherit foreground, translucent borders — readable on
     // both the host's dark and light themes without a design system.
@@ -150,9 +154,6 @@ window.__ModuleLoader__.load({
       var names = namesState[0]
       var setNames = namesState[1]
       // 预制人设（服务端下发）：[{id,label,text}]，旧 host 无此块时 chips 隐藏。
-      var presetCardsState = useState([])
-      var presetCards = presetCardsState[0]
-      var setPresetCards = presetCardsState[1]
       var msgState = useState('')
       var msg = msgState[0]
       var setMsg = msgState[1]
@@ -182,16 +183,16 @@ window.__ModuleLoader__.load({
           .then(function (d) {
             if (d && d.slots) setSlots(d.slots)
             if (d && d.names) setNames(d.names)
-            if (d && d.presetCards) setPresetCards(d.presetCards)
           })
           .catch(function (e) { setMsg('读取失败: ' + ((e && e.message) || e)) })
       }
       useEffect(refresh, [])
 
-      // 人设槽显示名：用户取名优先，缺省回落内置标签——与宠物改名同款。
+      // 人设槽显示名：用户取名优先 → 人设名（喵娘/零/墨隐）→ 内置预设名。
       var presetNameOf = function (presetId) {
         var custom = names && names[presetId]
-        return custom ? String(custom) : (SLOT_LABELS[presetId] || presetId)
+        if (custom) return String(custom)
+        return SLOT_PERSONA_NAMES[presetId] || SLOT_LABELS[presetId] || presetId
       }
       var commitPresetName = function (presetId, value) {
         var current = (names && names[presetId]) || ''
@@ -295,18 +296,6 @@ window.__ModuleLoader__.load({
         textReader.readAsText(file)
       }
 
-      // 预制人设：点击只填草稿（可改）——已有未保存草稿且内容不同时先
-      // confirm 防覆盖；保存仍走唯一路径。
-      var applyPresetCard = function (presetId, card) {
-        var draft = drafts[presetId]
-        if (draft !== null && draft !== undefined && draft !== card.text) {
-          if (!window.confirm('当前未保存的草稿会被「' + card.label + '」替换，继续？')) return
-        }
-        setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = card.text; return n })()) })
-        setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
-        setMsg('已填入预制人设「' + card.label + '」——随意修改后点保存角色卡')
-      }
-
       var save = function (presetId, text) {
         setBusy(true)
         setMsg('')
@@ -369,23 +358,10 @@ window.__ModuleLoader__.load({
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
             // 编辑区：卡面图（有则展示）在左，内容 textarea 在右——图只是
             // 装饰（host 存 characters/<presetId>.png，不进 prompt），404 时
-            // onError 隐藏、textarea 占满整行。头部下一行是预制人设快捷条。
+            // onError 隐藏、textarea 占满整行。
             var avatarSrc = AVATAR_GET + presetId + (avatarBust[presetId] ? '?t=' + avatarBust[presetId] : '')
-            var presetChips = presetCards && presetCards.length > 0
-              ? h('div', { style: Object.assign({}, row, { margin: '0 0 6px', gap: 6 }) },
-                h('span', { style: muted }, '试试预制：'),
-                presetCards.map(function (card) {
-                  return h('button', {
-                    key: card.id,
-                    style: { border: '1px solid rgba(127,127,127,.4)', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 11, padding: '1px 10px', background: 'transparent', color: 'inherit' },
-                    title: '填入「' + card.label + '」的预制人设（可修改后保存）',
-                    onClick: function () { applyPresetCard(presetId, card) },
-                  }, card.label)
-                }))
-              : null
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
-              presetChips,
               h('div', { style: { display: 'flex', gap: 10, alignItems: 'flex-start' } },
                 avatarFail[presetId] !== true ? h('img', {
                   src: avatarSrc,
