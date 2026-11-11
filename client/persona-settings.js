@@ -19,6 +19,8 @@ window.__ModuleLoader__.load({
 
     var READ = '/api/persona-settings-598/read'
     var UPDATE = '/api/persona-settings-598/update'
+    var AVATAR_POST = '/api/persona-settings-598/avatar'
+    var AVATAR_GET = '/api/persona-settings-598/avatar/'
 
     var SLOT_IDS = ['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3']
     // 软警告阈值：卡的每一个字每回合都会注入 prompt，超过这个长度提示用户
@@ -156,6 +158,14 @@ window.__ModuleLoader__.load({
       var openState = useState({})
       var open = openState[0]
       var setOpen = openState[1]
+      // 卡面（角色卡 PNG 原图）：host 存 characters/<presetId>.png，这里只管
+      // 展示——onError（404）隐藏降级；导入成功后 bust 刷新 + 复位隐藏态。
+      var avatarFailState = useState({})
+      var avatarFail = avatarFailState[0]
+      var setAvatarFail = avatarFailState[1]
+      var avatarBustState = useState({})
+      var avatarBust = avatarBustState[0]
+      var setAvatarBust = avatarBustState[1]
 
       var refresh = function () {
         fetch(READ, { credentials: 'same-origin' })
@@ -235,6 +245,27 @@ window.__ModuleLoader__.load({
           }
           reader.onerror = function () { setMsg(file.name + '：读取失败') }
           reader.readAsArrayBuffer(file)
+          // 卡面原图单独上传保存（展示用，不进 prompt）；失败静默——图是
+          // 装饰，不该打扰卡文本的导入反馈。
+          var imgReader = new FileReader()
+          imgReader.onload = function () {
+            var b64 = String(imgReader.result || '').split(',')[1] || ''
+            if (!b64) return
+            fetch(AVATAR_POST, {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ presetId: presetId, data: b64 }),
+            })
+              .then(function (r) { return r.json() })
+              .then(function (d) {
+                if (d && d.ok) {
+                  setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = false; return n })()) })
+                  setAvatarBust(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = Date.now(); return n })()) })
+                }
+              })
+              .catch(function () { /* 图是装饰：失败不打扰 */ })
+          }
+          imgReader.readAsDataURL(file)
           return
         }
         var textReader = new FileReader()
@@ -269,6 +300,10 @@ window.__ModuleLoader__.load({
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
               // 保存成功即收起（编辑→保存→折回）；失败保持展开等用户处理。
               setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = false; return n })()) })
+              // 清空保存=重置：host 删了卡面文件，本地同步隐藏（避免 404 重试）。
+              if (text.trim() === '') {
+                setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
+              }
               setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '角色卡已保存（' + presetNameOf(presetId) + '），下一回合生效')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
@@ -310,17 +345,29 @@ window.__ModuleLoader__.load({
               h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)),
               hasDraft && !isOpen ? h('span', { style: { color: '#e8b268', fontSize: 12 } }, '有未保存草稿') : null)
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
+            // 编辑区：卡面图（有则展示）在左，内容 textarea 在右——图只是
+            // 装饰（host 存 characters/<presetId>.png，不进 prompt），404 时
+            // onError 隐藏、textarea 占满整行。
+            var avatarSrc = AVATAR_GET + presetId + (avatarBust[presetId] ? '?t=' + avatarBust[presetId] : '')
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
-              h('textarea', {
-                style: textareaStyle,
-                value: text,
-                placeholder: slots && slots[presetId] ? slots[presetId].default : '',
-                onChange: function (e) {
-                  setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = e.target.value; return n })()) })
-                },
-                'aria-label': '角色卡文本 · ' + displayName,
-              }),
+              h('div', { style: { display: 'flex', gap: 10, alignItems: 'flex-start' } },
+                avatarFail[presetId] !== true ? h('img', {
+                  src: avatarSrc,
+                  alt: '卡面',
+                  style: { width: 120, maxHeight: 260, objectFit: 'contain', borderRadius: 6, border: '1px solid rgba(127,127,127,.35)', background: 'rgba(127,127,127,.06)', flex: '0 0 auto', alignSelf: 'flex-start' },
+                  onError: function () { setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) }) },
+                }) : null,
+                h('div', { style: { flex: '1 1 auto', minWidth: 0 } },
+                  h('textarea', {
+                    style: textareaStyle,
+                    value: text,
+                    placeholder: slots && slots[presetId] ? slots[presetId].default : '',
+                    onChange: function (e) {
+                      setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = e.target.value; return n })()) })
+                    },
+                    'aria-label': '角色卡文本 · ' + displayName,
+                  }))),
               h('div', { style: row },
                 h('button', {
                   style: btnStyle('primary'), disabled: busy || draft === null || draft === undefined,

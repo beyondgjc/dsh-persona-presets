@@ -9,8 +9,8 @@
  * @module dsh-persona-presets/settings-page
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import { DEFAULT_PERSONA, MAX_PERSONA_CHARS } from './persona.ts'
@@ -63,13 +63,15 @@ function writeJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
-async function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown> | undefined> {
+/** Default body ceiling: settings JSON is tiny. The avatar route passes a
+ * larger ceiling (base64-inflated card PNGs). */
+async function readJsonBody(req: IncomingMessage, maxBytes = 1_000_000): Promise<Record<string, unknown> | undefined> {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of req) {
     const part = typeof chunk === 'string' ? Buffer.from(chunk) : chunk as Buffer
     size += part.length
-    if (size > 1_000_000) return undefined
+    if (size > maxBytes) return undefined
     chunks.push(part)
   }
   try {
@@ -105,11 +107,24 @@ function slotViews(home: string): Record<string, SlotView> {
   return views
 }
 
+/** The card image (卡面) directory, next to the settings file: imported
+ * Character Card PNGs live here as <presetId>.png, display-only (the prompt
+ * never sees the image). */
+const AVATAR_DIR = 'characters'
+
+/** One avatar per whitelist slot; the path is whitelist-derived so no request
+ * field can make it escape the directory. */
+function avatarPath(home: string, presetId: string): string {
+  return join(dirname(settingsFilePath(home)), AVATAR_DIR, `${presetId}.png`)
+}
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
 type RouteHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void
 
 /**
- * Install the two routes. `home` is injectable for tests; production callers
- * omit it and the dsh home is resolved at install time.
+ * Install the settings routes. `home` is injectable for tests; production
+ * callers omit it and the dsh home is resolved at install time.
  */
 export function installSettingsPage(ctx: Context, home: string = dshHome()): void {
   const routeByPath = new Map<string, Map<string, RouteHandler>>()
@@ -158,7 +173,8 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
   // POST /api/persona-settings-598/update — whitelist merge, then persist. The
   // client posts { personas: { <presetId>: text } } and/or
   // { presetNames: { <presetId>: name } }; an empty string deletes the slot
-  // (reset-to-default), a non-string is ignored.
+  // (reset-to-default), a non-string is ignored. A deleted slot also removes
+  // its card image — the avatar exists only while the slot has a card.
   registerRoute('/api/persona-settings-598/update', {
     POST: async (req, res) => {
       const body = await readJsonBody(req)
@@ -169,7 +185,68 @@ export function installSettingsPage(ctx: Context, home: string = dshHome()): voi
       const next = mergePersonas(readPersonaSettings(home), body as { personas?: unknown; presetNames?: unknown })
       mkdirSync(dirname(settingsFilePath(home)), { recursive: true })
       writeFileSync(settingsFilePath(home), `${JSON.stringify(next, null, 2)}\n`, 'utf8')
+      for (const presetId of PERSONA_PRESET_IDS) {
+        if (next.personas?.[presetId] === undefined) {
+          try { rmSync(avatarPath(home, presetId)) } catch { /* absent — fine */ }
+        }
+      }
       writeJson(res, 200, { ok: true, slots: slotViews(home), names: next.presetNames ?? {} })
     },
   })
+
+  // POST /api/persona-settings-598/avatar — store the imported card image
+  // ({ presetId, data: <base64 PNG> }). PNG signature required, 8MB ceiling;
+  // the write path is whitelist-derived so the preset id cannot traverse.
+  registerRoute('/api/persona-settings-598/avatar', {
+    POST: async (req, res) => {
+      const body = await readJsonBody(req, 12_000_000)
+      if (body === undefined) {
+        writeJson(res, 422, { error: 'invalid JSON body' })
+        return
+      }
+      const presetId = typeof body.presetId === 'string' ? body.presetId : ''
+      if (!(PERSONA_PRESET_IDS as readonly string[]).includes(presetId)) {
+        writeJson(res, 422, { error: 'unknown preset id' })
+        return
+      }
+      const data = typeof body.data === 'string' ? body.data : ''
+      let bytes: Buffer
+      try {
+        bytes = Buffer.from(data, 'base64')
+      } catch {
+        writeJson(res, 422, { error: 'bad base64' })
+        return
+      }
+      if (bytes.length < PNG_SIGNATURE.length || !bytes.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+        writeJson(res, 422, { error: 'not a PNG image' })
+        return
+      }
+      if (bytes.length > 8_000_000) {
+        writeJson(res, 422, { error: 'image too large (8MB ceiling)' })
+        return
+      }
+      const path = avatarPath(home, presetId)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, bytes)
+      writeJson(res, 200, { ok: true })
+    },
+  })
+
+  // GET /api/persona-settings-598/avatar/<presetId> — serve the card image
+  // for the settings page's <img>. One exact route per whitelist id (the
+  // webserver matches exact paths only); 404 when the slot has no image, so
+  // the client degrades by hiding the <img>.
+  for (const presetId of PERSONA_PRESET_IDS) {
+    registerRoute(`/api/persona-settings-598/avatar/${presetId}`, {
+      GET: (_req, res) => {
+        try {
+          const bytes = readFileSync(avatarPath(home, presetId))
+          res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store' })
+          res.end(bytes)
+        } catch {
+          writeJson(res, 404, { error: 'no avatar' })
+        }
+      },
+    })
+  }
 }

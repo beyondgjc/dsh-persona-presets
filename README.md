@@ -4,7 +4,7 @@
 
 - **预设**：人设-自定义1/2/3（persona-598-custom-1/2/3），工具目录 = 标准模式克隆，人设行替换官方 `@deepseek-ai/dsh-persona`。
 - **设置页**：「角色卡」区块，每槽一张卡（可取名、常显对应预设），保存后下一回合生效（prompt 段每次组装实时读文件，无缓存无重启）。
-- **导入**：支持角色卡 PNG（SillyTavern 生态 V2/V3 格式，如 aicharactercards.com 下载的卡）、.md/.txt/.json——本机解析，结构化平铺成草稿，检查后保存。
+- **导入**：支持角色卡 PNG（SillyTavern 生态 V2/V3 格式，如 aicharactercards.com 下载的卡）、.md/.txt/.json——本机解析，结构化平铺成草稿，检查后保存；卡面原图存 `~/.dsh/persona-presets-598/characters/<presetId>.png` 并在编辑区左侧展示（纯展示，不进 prompt），清空保存即删图。
 - **存储**：`~/.dsh/persona-presets-598/persona-settings.json`，字段 `personas.<presetId>` 与 `presetNames`，卡上限 20000 字（超 10000 字软警告 token 消耗）、名上限 60 字。
 
 用户指南见 [docs/DETAIL.zh.md](docs/DETAIL.zh.md)。

@@ -68,7 +68,7 @@ function crossSiteReq(method: string, body?: unknown): unknown {
 
 interface CapturedResponse {
   status: number
-  body: string
+  body: string | Buffer
 }
 
 async function drive(route: RegisteredRoute, req: unknown): Promise<CapturedResponse> {
@@ -86,7 +86,7 @@ async function drive(route: RegisteredRoute, req: unknown): Promise<CapturedResp
 }
 
 function jsonOf(captured: CapturedResponse): Record<string, unknown> {
-  return JSON.parse(captured.body) as Record<string, unknown>
+  return JSON.parse(typeof captured.body === 'string' ? captured.body : String(captured.body)) as Record<string, unknown>
 }
 
 let home: string
@@ -100,8 +100,12 @@ beforeEach(() => {
 })
 
 describe('persona settings routes', () => {
-  it('registers exactly the two paths', () => {
+  it('registers exactly the settings paths (read/update/avatar store/avatar serve ×3)', () => {
     expect(routes.map(route => route.path).sort()).toEqual([
+      '/api/persona-settings-598/avatar',
+      '/api/persona-settings-598/avatar/persona-598-custom-1',
+      '/api/persona-settings-598/avatar/persona-598-custom-2',
+      '/api/persona-settings-598/avatar/persona-598-custom-3',
       '/api/persona-settings-598/read',
       '/api/persona-settings-598/update',
     ])
@@ -161,5 +165,52 @@ describe('persona settings routes', () => {
     const read = routes.find(route => route.path === '/api/persona-settings-598/read')!
     const captured = await drive(read, crossSiteReq('GET'))
     expect(captured.status).toBe(403)
+  })
+})
+
+describe('persona avatar routes (card image lifecycle)', () => {
+  const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d])
+
+  function avatarRoute(path: string): RegisteredRoute {
+    const route = routes.find(r => r.path === path)
+    if (!route) throw new Error('route missing: ' + path)
+    return route
+  }
+
+  it('POST stores a PNG and GET serves the same bytes back', async () => {
+    const store = avatarRoute('/api/persona-settings-598/avatar')
+    const captured = await drive(store, makeReq('POST', { presetId: 'persona-598-custom-1', data: PNG_BYTES.toString('base64') }))
+    expect(captured.status).toBe(200)
+    expect(jsonOf(captured).ok).toBe(true)
+    const written = readFileSync(join(home, 'persona-presets-598', 'characters', 'persona-598-custom-1.png'))
+    expect(written.equals(PNG_BYTES)).toBe(true)
+    const serve = avatarRoute('/api/persona-settings-598/avatar/persona-598-custom-1')
+    const got = await drive(serve, makeReq('GET'))
+    expect(got.status).toBe(200)
+    // Binary body: the fake res.end stores the Buffer as-is.
+    expect(Buffer.isBuffer(got.body)).toBe(true)
+    expect((got.body as Buffer).equals(PNG_BYTES)).toBe(true)
+  })
+
+  it('GET answers 404 when the slot has no image', async () => {
+    const serve = avatarRoute('/api/persona-settings-598/avatar/persona-598-custom-2')
+    const got = await drive(serve, makeReq('GET'))
+    expect(got.status).toBe(404)
+  })
+
+  it('POST rejects non-whitelist ids and non-PNG payloads', async () => {
+    const store = avatarRoute('/api/persona-settings-598/avatar')
+    const badId = await drive(store, makeReq('POST', { presetId: 'whale598', data: PNG_BYTES.toString('base64') }))
+    expect(badId.status).toBe(422)
+    const badPng = await drive(store, makeReq('POST', { presetId: 'persona-598-custom-1', data: Buffer.from('not a png').toString('base64') }))
+    expect(badPng.status).toBe(422)
+  })
+
+  it('deleting the slot via update removes the stored image', async () => {
+    const store = avatarRoute('/api/persona-settings-598/avatar')
+    await drive(store, makeReq('POST', { presetId: 'persona-598-custom-3', data: PNG_BYTES.toString('base64') }))
+    const update = routes.find(route => route.path === '/api/persona-settings-598/update')!
+    await drive(update, makeReq('POST', { personas: { 'persona-598-custom-3': '' } }))
+    expect(existsSync(join(home, 'persona-presets-598', 'characters', 'persona-598-custom-3.png'))).toBe(false)
   })
 })
