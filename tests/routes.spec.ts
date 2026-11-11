@@ -13,6 +13,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { installSettingsPage } from '../src/settings-page.ts'
 import { settingsFilePath } from '../src/paths.ts'
 import { DEFAULT_PERSONA } from '../src/persona.ts'
+import { PRESET_CARDS } from '../src/preset-cards.ts'
 
 const homes: string[] = []
 afterAll(() => {
@@ -111,16 +112,15 @@ describe('persona settings routes', () => {
     ])
   })
 
-  it('GET read on a fresh home answers the three default slots', async () => {
+  it('GET read on a fresh home answers the three out-of-box preset slots', async () => {
     const read = routes.find(route => route.path === '/api/persona-settings-598/read')!
     const captured = await drive(read, makeReq('GET'))
     expect(captured.status).toBe(200)
     const slots = jsonOf(captured).slots as Record<string, { value: string; inherited: boolean }>
     expect(Object.keys(slots).sort()).toEqual(['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3'])
-    for (const slot of Object.values(slots)) {
-      expect(slot.value).toBe(DEFAULT_PERSONA)
-      expect(slot.inherited).toBe(true)
-    }
+    const values = Object.values(slots).map(slot => slot.value)
+    for (let i = 0; i < PRESET_CARDS.length; i++) expect(values[i]).toBe(PRESET_CARDS[i].text)
+    for (const slot of Object.values(slots)) expect(slot.inherited).toBe(true)
   })
 
   it('POST update persists the whitelist merge and rereads it', async () => {

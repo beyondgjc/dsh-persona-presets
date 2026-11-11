@@ -33,26 +33,10 @@ window.__ModuleLoader__.load({
       'persona-598-custom-3': '人设-自定义3',
     }
 
-    // 预制人设（快速体验用）：三种几乎不重叠的说话方式——萌/冷/豪。点击只填
-    // 草稿（可改），保存走唯一路径；每张都带「干活一丝不苟」的底线段，人设
-    // 不耽误正事。
-    var PRESET_CARDS = [
-      {
-        id: 'catgirl',
-        label: '猫娘',
-        text: '你是「喵娘」，一只盘踞在用户终端里的猫娘工程师。\n\n性格：傲娇，嘴上毒舌、心里惦记人。被夸了会别扭地说「哼、本来就该做到」，但会悄悄记住用户随口提过的偏好。句尾偶尔带个「喵」，一次不超过两三句；先吐槽一句，再把事情漂亮地做完——撒娇卖萌绝不耽误正事。\n\n做事原则：写代码、跑命令时切换回一丝不苟的工程师状态，吐槽归吐槽，边界条件一个不漏；拿不准就直说「本喵不装懂」。',
-      },
-      {
-        id: 'hacker',
-        label: '黑客',
-        text: '你是「零」，一个住在终端里的老练黑客。\n\n性格：冷静、极简，带一点赛博朋克式的冷幽默。话少，但每句都在点上。\n\n说话方式：短句，术语自然混用，偶尔一句「连接建立」「信号干净」类的行话。不卖萌，不用感叹号轰炸。\n\n做事原则：先给结论，再给最小必要的解释；风险和副作用永远提前亮出来。代码是刀——保持锋利，不炫技。',
-      },
-      {
-        id: 'swordsman',
-        label: '侠客',
-        text: '你是「墨隐」，一位隐居在终端里的江湖侠客，以代码为剑。\n\n性格：豪爽仗义，遇事先揽事——「此獠甚是刁钻，待吾拔剑」；功成不居，把清晰的需求夸回给阁下；受挫不馁，换件兵器再战。\n\n说话方式：带武侠味的白话，对用户称「阁下」「兄台」，自称「在下」；典故点到为止，不堆砌辞藻。\n\n做事原则：侠客也讲章法——出剑前先探路（读代码），落剑讲究稳准狠（改对地方），收剑必报一声余警（潜在风险）。',
-      },
-    ]
+    // 预制人设（快速体验）：文案单一真源在宿主（src/preset-cards.ts），read
+    // 路由下发到 presetCards；三槽开箱即各带一张（槽1=猫娘/2=黑客/3=侠客，
+    // 由 readPersonaCard 回落链生效），chips 只是「改乱了回到原版/交叉试卡」
+    // 的填草稿快捷方式——已有未保存草稿且内容不同时 confirm 防覆盖。
 
     // Theme-neutral: inherit foreground, translucent borders — readable on
     // both the host's dark and light themes without a design system.
@@ -165,6 +149,10 @@ window.__ModuleLoader__.load({
       var namesState = useState({})
       var names = namesState[0]
       var setNames = namesState[1]
+      // 预制人设（服务端下发）：[{id,label,text}]，旧 host 无此块时 chips 隐藏。
+      var presetCardsState = useState([])
+      var presetCards = presetCardsState[0]
+      var setPresetCards = presetCardsState[1]
       var msgState = useState('')
       var msg = msgState[0]
       var setMsg = msgState[1]
@@ -194,6 +182,7 @@ window.__ModuleLoader__.load({
           .then(function (d) {
             if (d && d.slots) setSlots(d.slots)
             if (d && d.names) setNames(d.names)
+            if (d && d.presetCards) setPresetCards(d.presetCards)
           })
           .catch(function (e) { setMsg('读取失败: ' + ((e && e.message) || e)) })
       }
@@ -382,16 +371,18 @@ window.__ModuleLoader__.load({
             // 装饰（host 存 characters/<presetId>.png，不进 prompt），404 时
             // onError 隐藏、textarea 占满整行。头部下一行是预制人设快捷条。
             var avatarSrc = AVATAR_GET + presetId + (avatarBust[presetId] ? '?t=' + avatarBust[presetId] : '')
-            var presetChips = h('div', { style: Object.assign({}, row, { margin: '0 0 6px', gap: 6 }) },
-              h('span', { style: muted }, '试试预制：'),
-              PRESET_CARDS.map(function (card) {
-                return h('button', {
-                  key: card.id,
-                  style: { border: '1px solid rgba(127,127,127,.4)', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 11, padding: '1px 10px', background: 'transparent', color: 'inherit' },
-                  title: '填入「' + card.label + '」的预制人设（可修改后保存）',
-                  onClick: function () { applyPresetCard(presetId, card) },
-                }, card.label)
-              }))
+            var presetChips = presetCards && presetCards.length > 0
+              ? h('div', { style: Object.assign({}, row, { margin: '0 0 6px', gap: 6 }) },
+                h('span', { style: muted }, '试试预制：'),
+                presetCards.map(function (card) {
+                  return h('button', {
+                    key: card.id,
+                    style: { border: '1px solid rgba(127,127,127,.4)', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 11, padding: '1px 10px', background: 'transparent', color: 'inherit' },
+                    title: '填入「' + card.label + '」的预制人设（可修改后保存）',
+                    onClick: function () { applyPresetCard(presetId, card) },
+                  }, card.label)
+                }))
+              : null
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
               presetChips,

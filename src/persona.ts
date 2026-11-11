@@ -29,6 +29,7 @@
 import { readFileSync } from 'node:fs'
 import type { Context } from '@deepseek-ai/cordis'
 import { dshHome, settingsFilePath } from './paths.ts'
+import { presetCardFor } from './preset-cards.ts'
 
 /** Cordis plugin name. Preset ymls mount it as 'dsh-persona-presets/persona'. */
 export const name = 'persona'
@@ -81,9 +82,10 @@ export const DEFAULT_PERSONA =
 export const MAX_PERSONA_CHARS = 20000
 
 /**
- * Read the configured character card for one preset slot: the slot
- * `personas.<key>` → DEFAULT_PERSONA. No global card and no legacy fallback
- * chain — this plugin starts clean, one slot one card. Sync on purpose —
+ * Read the configured character card for one preset slot. Fallback chain:
+ * saved slot `personas.<key>` → the slot's out-of-box preset card (猫娘 /
+ * 黑客 / 侠客, preset-cards.ts) → the generic DEFAULT_PERSONA. "Cleared" and
+ * "reset to the preset card" are the same state. Sync on purpose —
  * PromptSection.text is a synchronous provider called once per assembly, and
  * a ~1KB JSON read per request is noise next to the LLM call it feeds, so
  * there is no cache to invalidate. Trims first, then caps.
@@ -98,7 +100,11 @@ export function readPersonaCard(home: string, key?: string): string {
       const slot = typeof slots[key] === 'string' ? slots[key].trim() : ''
       if (slot !== '') return slot.length > MAX_PERSONA_CHARS ? slot.slice(0, MAX_PERSONA_CHARS) : slot
     }
-  } catch { /* missing or unreadable file answers the default */ }
+  } catch { /* missing or unreadable file falls through to the preset card */ }
+  if (key !== undefined) {
+    const preset = presetCardFor(key)
+    if (preset) return preset.text
+  }
   return DEFAULT_PERSONA
 }
 
