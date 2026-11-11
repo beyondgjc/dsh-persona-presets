@@ -27,7 +27,7 @@ npm run typecheck   # tsc --noEmit
 
 1. **patch yml 单根**：一个 patch 文件只能有一个顶层 `- insert:`——第二段顶层条目会被 patch applier **静默丢弃**（dsh-agentic-pet 实测教训）。多预设 = 同一个 `- insert:` 下多条。
 2. **interpolate: false 不可移除**：用户自由文本进严格 `{{}}` 插值会让整次 prompt 组装抛异常。
-3. **白名单合并语义**：只有 `PERSONA_PRESET_IDS` 内的键可写；空串=删除槽位=回落默认卡；非字符串忽略；先 trim 后截 8000（`MAX_PERSONA_CHARS`，读侧同口径，手编文件绕不过）。
+3. **白名单合并语义**：只有 `PERSONA_PRESET_IDS` 内的键可写；空串=删除槽位=回落默认卡；非字符串忽略；先 trim 后截 20000（`MAX_PERSONA_CHARS`，读侧同口径，手编文件绕不过）。
 4. **standard 克隆纪律**：工具行深拷贝自 dsh 的 `presets/standard.patch.yml`；上游演进时 tests/presets.spec.ts 的深比对会红，按 red 重拷（dsh-agentic-pet presets/ 同款纪律）。
 5. **双 face 模式**：宿主服务（systemPrompt/webServer）未发布 npm，用 interface face + `as unknown` 双投访问，禁止本地 `declare module` 重声明（TS2717 合并冲突）。
 6. **client 无构建步骤**：ES5 风格手写 bundle；apply 逐 section 降级（safe 包裹），客户端启动审计对 throw 是致命的。

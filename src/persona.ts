@@ -71,10 +71,14 @@ function systemPromptOf(ctx: Context): PromptRegistryFace {
 export const DEFAULT_PERSONA =
   '你是用户的 AI 助手，说话简洁、就事论事。这张卡是你人设的全部来源：用户可以在设置页「角色卡」区块改写它，赋予你新的身份、性格与说话方式。'
 
-/** Upper bound for the user-edited card, enforced by the settings merge. A
- * runaway card would inflate every session prompt; the sync reader applies
- * the same cap so a hand-edited file cannot bypass it. */
-export const MAX_PERSONA_CHARS = 8000
+/** Upper bound for the user-edited card, enforced by the settings merge. The
+ * card is injected into every prompt of every session mounted with the
+ * preset, so a runaway card would inflate every turn — the cap keeps that
+ * bounded (the read side applies the same cap so a hand-edited file cannot
+ * bypass it). 20000 leaves room for imported SillyTavern cards (flattened V2
+ * cards with dialog examples routinely exceed 8000); the client shows a soft
+ * token-cost warning past 10000. */
+export const MAX_PERSONA_CHARS = 20000
 
 /**
  * Read the configured character card for one preset slot: the slot

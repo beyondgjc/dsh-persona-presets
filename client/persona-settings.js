@@ -21,6 +21,9 @@ window.__ModuleLoader__.load({
     var UPDATE = '/api/persona-settings-598/update'
 
     var SLOT_IDS = ['persona-598-custom-1', 'persona-598-custom-2', 'persona-598-custom-3']
+    // 软警告阈值：卡的每一个字每回合都会注入 prompt，超过这个长度提示用户
+    // 注意 token 消耗（硬上限以服务端 maxLength 为准，超限保存会被截断）。
+    var SOFT_WARN_CHARS = 10000
     // 内置预设显示名（对应预设标注 + 取名的缺省值）——与 yml config.name 一致。
     var SLOT_LABELS = {
       'persona-598-custom-1': '人设-自定义1',
@@ -201,11 +204,11 @@ window.__ModuleLoader__.load({
         var slot = slots ? slots[presetId] : null
         return slot ? String(slot.value || '') : ''
       }
-      // Unicode code-point count, same unit as the host's 8000-char cap.
+      // Unicode code-point count, same unit as the host cap (server-sent maxLength).
       var countOf = function (presetId) { return Array.from(textOf(presetId)).length }
       var maxOf = function (presetId) {
         var slot = slots ? slots[presetId] : null
-        return (slot && Number(slot.maxLength)) || 8000
+        return (slot && Number(slot.maxLength)) || 20000
       }
 
       // 导入：.md/.txt 直达草稿；.json/.png 解析角色卡后结构化平铺。结果只
@@ -219,7 +222,7 @@ window.__ModuleLoader__.load({
           setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = imported.text; return n })()) })
           setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
           var count = Array.from(imported.text).length
-          var tail = count > max ? '，超出 ' + String(max) + ' 字上限，请删减后保存' : '——检查后点保存角色卡'
+          var tail = count > max ? '，超出 ' + String(max) + ' 字上限，请删减后保存' : (count > SOFT_WARN_CHARS ? '，注意 token 消耗（每回合注入 prompt）——检查后点保存角色卡' : '——检查后点保存角色卡')
           if (imported.hasBook) tail = '（该卡含世界书，未导入）' + tail
           setMsg((imported.name ? '已导入「' + imported.name + '」，' : prefix + '：') + '共 ' + String(count) + ' 字' + tail)
         }
@@ -331,7 +334,8 @@ window.__ModuleLoader__.load({
                     type: 'file', accept: '.md,.txt,.json,.png', style: { display: 'none' },
                     onChange: function (e) { handleImport(presetId, e.target.files && e.target.files[0]); e.target.value = '' },
                   })),
-                h('span', { style: count > max ? { color: '#ff7369', fontSize: 12 } : muted }, String(count) + ' / ' + String(max) + ' 字')))
+                h('span', { style: count > max ? { color: '#ff7369', fontSize: 12 } : muted }, String(count) + ' / ' + String(max) + ' 字'),
+                count > SOFT_WARN_CHARS ? h('span', { style: { color: '#e8b268', fontSize: 12 } }, '⚠ 每回合注入 prompt，注意 token 消耗') : null))
           }),
           msg ? h('div', { style: Object.assign({ margin: '4px 0' }, muted) }, msg) : null,
           h(Hint, null, '每个预设一张角色卡：把会话挂到对应预设（人设-自定义1/2/3），它就带这张卡。卡片就是你给它设定的人设。'),

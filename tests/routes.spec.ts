@@ -130,7 +130,7 @@ describe('persona settings routes', () => {
     expect(written.personas).toEqual({ 'persona-598-custom-1': '一号卡' })
     // The response slots reflect the write: slot 1 owned, the rest inherited.
     const slots = jsonOf(captured).slots as Record<string, { value: string; inherited: boolean }>
-    expect(slots['persona-598-custom-1']).toEqual({ value: '一号卡', default: DEFAULT_PERSONA, maxLength: 8000, inherited: false })
+    expect(slots['persona-598-custom-1']).toEqual({ value: '一号卡', default: DEFAULT_PERSONA, maxLength: 20000, inherited: false })
     expect(slots['persona-598-custom-2'].inherited).toBe(true)
   })
 
