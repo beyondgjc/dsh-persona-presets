@@ -299,15 +299,25 @@ window.__ModuleLoader__.load({
       var save = function (presetId, text) {
         setBusy(true)
         setMsg('')
+        // 清空保存=重置：卡与卡名一起回到出厂（人设名）——reset 语义完整。
+        var body = text.trim() === ''
+          ? {
+              personas: (function () { var n = {}; n[presetId] = ''; return n })(),
+              presetNames: (function () { var n = {}; n[presetId] = ''; return n })(),
+            }
+          : { personas: (function () { var n = {}; n[presetId] = text; return n })() }
         fetch(UPDATE, {
           method: 'POST', credentials: 'same-origin',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ personas: (function () { var n = {}; n[presetId] = text; return n })() }),
+          body: JSON.stringify(body),
         })
           .then(function (r) { return r.json() })
           .then(function (d) {
             if (d && d.ok && d.slots) {
               setSlots(d.slots)
+              // 名字随响应同步（恢复默认会删 presetNames 键，本地不刷新的话
+              // uncontrolled 输入框 key 不变，旧名会一直挂着）。
+              if (d.names) setNames(d.names)
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
               // 保存成功即收起（编辑→保存→折回）；失败保持展开等用户处理。
               setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = false; return n })()) })
