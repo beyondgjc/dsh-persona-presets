@@ -83,7 +83,7 @@ export const MAX_PERSONA_CHARS = 20000
 
 /**
  * Read the configured character card for one preset slot. Fallback chain:
- * saved slot `personas.<key>` → the slot's out-of-box preset card (猫娘 /
+ * saved slot `personas.<key>` → the slot's out-of-box preset card (鲸鱼娘 /
  * 黑客 / 侠客, preset-cards.ts) → the generic DEFAULT_PERSONA. "Cleared" and
  * "reset to the preset card" are the same state. Sync on purpose —
  * PromptSection.text is a synchronous provider called once per assembly, and
