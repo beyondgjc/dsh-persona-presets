@@ -84,7 +84,7 @@ export const MAX_PERSONA_CHARS = 20000
 /**
  * Read the configured character card for one preset slot. Fallback chain:
  * saved slot `personas.<key>` → the slot's out-of-box preset card (鲸鱼娘 /
- * 病娇 / 暗恋, preset-cards.ts) → the generic DEFAULT_PERSONA. "Cleared" and
+ * 病娇 / 小满, preset-cards.ts) → the generic DEFAULT_PERSONA. "Cleared" and
  * "reset to the preset card" are the same state. Sync on purpose —
  * PromptSection.text is a synchronous provider called once per assembly, and
  * a ~1KB JSON read per request is noise next to the LLM call it feeds, so

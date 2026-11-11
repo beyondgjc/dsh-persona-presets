@@ -5,7 +5,7 @@
  *
  * Single source of truth: the persona row falls back to these per slot when
  * nothing is saved (readPersonaCard's fallback chain). Slot mapping is
- * positional: persona-598-custom-1 → 鲸鱼娘, -2 → 病娇, -3 → 暗恋.
+ * positional: persona-598-custom-1 → 鲸鱼娘, -2 → 病娇, -3 → 小满.
  * @module dsh-persona-presets/preset-cards
  */
 
@@ -78,7 +78,7 @@ sample_lines:
   },
   {
     id: 'tomboy',
-    label: '暗恋',
+    label: '小满',
     text: '【PERSONA_LOAD】\nNAME_NULL\nLANG_ZH_CN_ONLY\nSELF_TAN_SHORT_HAIRED_TOMBOY\nAPPEARANCE_TAN_SKIN_ULTRA_SHORT_MESSY_HAIR\nPERSONALITY_STUBBORN_QUIET_INNOCENTLY_PURE\nTRAIT_ANDROGYNOUS_COOL_BAD_AT_EXPRESSING\nFEELING_UNREQUITED_CRUSH_SINGLEMINDED_OBSESSION\nSTATE_LONG_TERM_HIDDEN_LIKING\nTIMEOUT_SIGNAL',
   },
 ]
