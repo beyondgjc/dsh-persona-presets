@@ -50,6 +50,71 @@ window.__ModuleLoader__.load({
     function Hint(props) {
       return h('div', { style: Object.assign({ margin: '6px 0 2px' }, muted) }, props.children)
     }
+
+    // ── 角色卡导入（本机解析，文件不过服务器）────────────────────────
+    // Character Card V2/V3（SillyTavern 生态标准）：角色数据以 base64 JSON
+    // 嵌在 PNG tEXt 块里（V2 关键字 chara，V3 是 ccv3）。aicharactercards.com
+    // 等站下载的 PNG 就是这种卡。解析出的多字段按中文小节结构化平铺，空字段
+    // 跳过；character_book（世界书）是另一套注入机制，v1 不导入只提示。
+
+    function latin1(bytes, start, end) {
+      var s = ''
+      for (var i = start; i < end; i++) s += String.fromCharCode(bytes[i])
+      return s
+    }
+
+    function decodeBase64Utf8(b64) {
+      var bin = atob(String(b64).replace(/\s+/g, ''))
+      var bytes = new Uint8Array(bin.length)
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+      return new TextDecoder('utf-8').decode(bytes)
+    }
+
+    // 遍历 PNG chunk 找 tEXt 的 chara/ccv3 块，返回解析后的卡 JSON；不是
+    // 角色卡 PNG 时返回 null（签名不对/没有块/块内容解不开都算）。
+    function pngCharaJson(buffer) {
+      try {
+        var dv = new DataView(buffer)
+        if (dv.byteLength < 8 || dv.getUint8(0) !== 0x89 || dv.getUint8(1) !== 0x50) return null
+        var off = 8
+        while (off + 8 <= dv.byteLength) {
+          var len = dv.getUint32(off)
+          var type = latin1(new Uint8Array(buffer, off + 4, 4), 0, 4)
+          if (type === 'tEXt') {
+            var data = new Uint8Array(buffer, off + 8, len)
+            var zero = -1
+            for (var i = 0; i < data.length; i++) { if (data[i] === 0) { zero = i; break } }
+            if (zero > 0) {
+              var keyword = latin1(data, 0, zero)
+              if (keyword === 'chara' || keyword === 'ccv3') {
+                try { return JSON.parse(decodeBase64Utf8(latin1(data, zero + 1, data.length))) } catch (e) { /* 继续扫其它块 */ }
+              }
+            }
+          }
+          if (type === 'IEND') break
+          off += 12 + len // length(4) + type(4) + data(len) + crc(4)
+        }
+      } catch (e) { /* 烂图按 null 处理 */ }
+      return null
+    }
+
+    // 卡 JSON（V1 顶层或 V2/V3 的 data 子对象）→ 结构化平铺文本。
+    // 不像卡的输入返回 null。世界书（character_book）不进卡，用 hasBook 提示。
+    function flattenCard(raw) {
+      try {
+        var d = raw && raw.data && (raw.data.name || raw.data.description) ? raw.data : raw
+        if (!d || typeof d !== 'object') return null
+        var sections = [['名字', 'name'], ['设定', 'description'], ['性格', 'personality'], ['场景', 'scenario'], ['开场白', 'first_mes'], ['对话示例', 'mes_example'], ['备注', 'creator_notes']]
+        var out = []
+        for (var i = 0; i < sections.length; i++) {
+          var v = d[sections[i][1]]
+          if (typeof v === 'string' && v.trim() !== '') out.push('【' + sections[i][0] + '】' + v.trim())
+        }
+        if (out.length === 0) return null
+        return { text: out.join('\n\n'), hasBook: !!d.character_book, name: typeof d.name === 'string' ? d.name : '' }
+      } catch (e) { return null }
+    }
+
     // Diagnostic boundary: a render crash inside the section displays in the
     // panel itself — the host's slot machinery contains entry crashes and
     // reports them off-console, which reads as an empty pane.
@@ -143,6 +208,49 @@ window.__ModuleLoader__.load({
         return (slot && Number(slot.maxLength)) || 8000
       }
 
+      // 导入：.md/.txt 直达草稿；.json/.png 解析角色卡后结构化平铺。结果只
+      // 填草稿（不自动保存）——检查/删减后照常走「保存角色卡」唯一写路径。
+      var handleImport = function (presetId, file) {
+        if (!file) return
+        var max = maxOf(presetId)
+        var name = file.name.toLowerCase()
+        var finish = function (imported, prefix) {
+          if (!imported) { setMsg(prefix + '：解析失败——不是可识别的角色卡'); return }
+          setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = imported.text; return n })()) })
+          setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
+          var count = Array.from(imported.text).length
+          var tail = count > max ? '，超出 ' + String(max) + ' 字上限，请删减后保存' : '——检查后点保存角色卡'
+          if (imported.hasBook) tail = '（该卡含世界书，未导入）' + tail
+          setMsg((imported.name ? '已导入「' + imported.name + '」，' : prefix + '：') + '共 ' + String(count) + ' 字' + tail)
+        }
+        if (/\.png$/.test(name)) {
+          var reader = new FileReader()
+          reader.onload = function () {
+            var card = pngCharaJson(reader.result)
+            if (!card) { setMsg(file.name + '：不是角色卡 PNG（未找到内嵌角色数据）'); return }
+            finish(flattenCard(card), file.name)
+          }
+          reader.onerror = function () { setMsg(file.name + '：读取失败') }
+          reader.readAsArrayBuffer(file)
+          return
+        }
+        var textReader = new FileReader()
+        textReader.onload = function () {
+          var text = String(textReader.result || '')
+          if (/\.json$/.test(name)) {
+            try {
+              var card = flattenCard(JSON.parse(text))
+              if (card) { finish(card, file.name); return }
+              setMsg(file.name + '：JSON 里没有角色卡字段（需要 name/description 等）')
+            } catch (e) { setMsg(file.name + '：JSON 解析失败') }
+            return
+          }
+          finish({ text: text, hasBook: false, name: '' }, file.name)
+        }
+        textReader.onerror = function () { setMsg(file.name + '：读取失败') }
+        textReader.readAsText(file)
+      }
+
       var save = function (presetId, text) {
         setBusy(true)
         setMsg('')
@@ -216,6 +324,13 @@ window.__ModuleLoader__.load({
                   onClick: function () { save(presetId, text) },
                 }, '保存角色卡'),
                 h('button', { style: btnStyle(), disabled: busy, onClick: function () { save(presetId, '') } }, '恢复默认'),
+                // label 包住隐藏 file input：原生触发文件选择，无需 ref。
+                h('label', { style: Object.assign({}, btnStyle(), { display: 'inline-flex', alignItems: 'center' }), title: '导入 .md/.txt/.json 或角色卡 PNG（SillyTavern 格式，解析在本机完成）' },
+                  '导入',
+                  h('input', {
+                    type: 'file', accept: '.md,.txt,.json,.png', style: { display: 'none' },
+                    onChange: function (e) { handleImport(presetId, e.target.files && e.target.files[0]); e.target.value = '' },
+                  })),
                 h('span', { style: count > max ? { color: '#ff7369', fontSize: 12 } : muted }, String(count) + ' / ' + String(max) + ' 字')))
           }),
           msg ? h('div', { style: Object.assign({ margin: '4px 0' }, muted) }, msg) : null,
