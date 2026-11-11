@@ -2,7 +2,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_PERSONA, MAX_PERSONA_CHARS, readPersonaCard } from '../src/persona.ts'
+import type { Context } from '@deepseek-ai/cordis'
+import { DEFAULT_PERSONA, MAX_PERSONA_CHARS, apply, readPersonaCard } from '../src/persona.ts'
 import { settingsFilePath } from '../src/paths.ts'
 import { PRESET_CARDS } from '../src/preset-cards.ts'
 
@@ -77,5 +78,79 @@ describe('readPersonaCard', () => {
     expect(readPersonaCard(home, 'persona-598-custom-1')).toBe('一号卡')
     expect(readPersonaCard(home, 'persona-598-custom-2')).toBe(PRESET_CARDS[1].text)
     expect(readPersonaCard(home, 'persona-598-custom-3')).toBe('三号卡')
+  })
+})
+
+/** What the row registers, as captured by a fake prompt registry. */
+interface RegisteredSection {
+  name: string
+  order: number
+  text: string | (() => string)
+  interpolate?: boolean
+}
+
+/** Minimal cordis face for the persona row: effect(fn) runs immediately and
+ * the fake systemPrompt records section registrations against a configurable
+ * order table (absent keys answer NaN, exercising the finite fallbacks). */
+function makeRowCtx(orders: Record<string, number>): { ctx: Context; sections: RegisteredSection[] } {
+  const sections: RegisteredSection[] = []
+  const ctx = {
+    effect(fn: () => unknown, label: string) {
+      void label
+      fn()
+      return { unsubscribe() { /* noop */ } }
+    },
+    systemPrompt: {
+      getSectionOrder(key: string) {
+        const value = orders[key]
+        return typeof value === 'number' ? value : NaN
+      },
+      section(input: RegisteredSection) {
+        sections.push(input)
+        return () => undefined
+      },
+    },
+  } as unknown as Context
+  return { ctx, sections }
+}
+
+describe('apply (the persona row)', () => {
+  it('registers the card section (interpolation off, slot card through the fallback chain)', () => {
+    const { ctx, sections } = makeRowCtx({ DEPLOYMENT_PERSONA_PREFIX: 0, HARNESS_IDENTITY: -1000 })
+    apply(ctx, { personaKey: 'persona-598-custom-1' }, home)
+    const persona = sections.find(section => section.name === 'deployment:persona-prefix')
+    expect(persona).toBeDefined()
+    expect(persona!.order).toBe(0)
+    expect(persona!.interpolate).toBe(false)
+    expect(typeof persona!.text).toBe('function')
+    expect((persona!.text as () => string)()).toBe(PRESET_CARDS[0].text)
+  })
+
+  it('the card section reflects a saved slot edit and an optional prefix', () => {
+    writeSettings({ 'persona-598-custom-2': '二号卡' })
+    const { ctx, sections } = makeRowCtx({ DEPLOYMENT_PERSONA_PREFIX: 0, HARNESS_IDENTITY: -1000 })
+    apply(ctx, { personaKey: 'persona-598-custom-2', prefix: '固定框' }, home)
+    const persona = sections.find(section => section.name === 'deployment:persona-prefix')!
+    expect((persona.text as () => string)()).toBe('二号卡\n\n固定框')
+  })
+
+  it('shadows the harness identity opener with a scoped empty section ahead of the card', () => {
+    const { ctx, sections } = makeRowCtx({ DEPLOYMENT_PERSONA_PREFIX: 0, HARNESS_IDENTITY: -1000 })
+    apply(ctx, { personaKey: 'persona-598-custom-1' }, home)
+    const shadow = sections.find(section => section.name === 'harness:identity')
+    expect(shadow).toBeDefined()
+    expect(shadow!.order).toBe(-1000)
+    expect(shadow!.text).toBe('')
+  })
+
+  it('the identity shadow falls back to order -1000 when the host drops the key', () => {
+    const { ctx, sections } = makeRowCtx({})
+    apply(ctx, { personaKey: 'persona-598-custom-3' }, home)
+    const shadow = sections.find(section => section.name === 'harness:identity')!
+    expect(shadow.order).toBe(-1000)
+    expect(shadow.text).toBe('')
+    // The card section still lands on its documented fallback order.
+    const persona = sections.find(section => section.name === 'deployment:persona-prefix')!
+    expect(persona.order).toBe(0)
   })
 })

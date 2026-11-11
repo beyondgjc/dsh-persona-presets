@@ -42,5 +42,6 @@
 ## 技术说明
 
 - 人设行（`dsh-persona-presets/persona`）占据 `deployment:persona-prefix` 段、替换官方 `@deepseek-ai/dsh-persona` 行，`interpolate: false`——用户自由文本永远不会进入严格插值。
+- 人设行同时以**同名 scoped 空段**遮蔽宿主的 `harness:identity` 开场白（"You are an AI agent powered by DeepSeek Harness."，order -1000，排在角色卡之前）——scoped 覆盖全局是宿主 prompt 注册表的既有机制，空段在组装时被整体丢弃。效果：挂在三个自定义预设上的会话只读到角色卡、不再有竞争身份句；standard 等其它预设不受影响。
 - 预设工具行克隆自 dsh 的 `presets/standard.patch.yml`；该文件演进时需 re-diff（tests/presets.spec.ts 深比对会红）。
 - 设置路由走同源回环围栏（非同源/跨站请求 403）。
