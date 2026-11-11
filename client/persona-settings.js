@@ -157,6 +157,8 @@ window.__ModuleLoader__.load({
       var msgState = useState('')
       var msg = msgState[0]
       var setMsg = msgState[1]
+      // msg 行只用于错误反馈（保存失败/解析失败/读取失败）；成功不需要提示
+      // ——按钮动作与 UI 状态变化本身已说明发生了什么。
       var busyState = useState(false)
       var busy = busyState[0]
       var setBusy = busyState[1]
@@ -212,7 +214,6 @@ window.__ModuleLoader__.load({
           .then(function (d) {
             if (d && d.ok && d.names) {
               setNames(d.names)
-              setMsg(v === '' ? '已恢复内置名（' + SLOT_LABELS[presetId] + '）' : '卡名已保存')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
             }
@@ -243,9 +244,6 @@ window.__ModuleLoader__.load({
           setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = imported.text; return n })()) })
           setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
           var count = Array.from(imported.text).length
-          var tail = count > max ? '，超出 ' + String(max) + ' 字上限，请删减后保存' : (count > SOFT_WARN_CHARS ? '，注意 token 消耗（每回合注入 prompt）——检查后点保存角色卡' : '——检查后点保存角色卡')
-          if (imported.hasBook) tail = '（该卡含世界书，未导入）' + tail
-          setMsg((imported.name ? '已导入「' + imported.name + '」，' : prefix + '：') + '共 ' + String(count) + ' 字' + tail)
         }
         if (/\.png$/.test(name)) {
           var reader = new FileReader()
@@ -325,7 +323,6 @@ window.__ModuleLoader__.load({
               if (text.trim() === '') {
                 setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
               }
-              setMsg(text.trim() === '' ? '已恢复默认卡（' + presetNameOf(presetId) + '）' : '角色卡已保存（' + presetNameOf(presetId) + '），下一回合生效')
             } else {
               setMsg('保存失败: ' + ((d && d.error) || '未知错误'))
             }
