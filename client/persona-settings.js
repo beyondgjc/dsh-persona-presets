@@ -319,11 +319,8 @@ window.__ModuleLoader__.load({
               // uncontrolled 输入框 key 不变，旧名会一直挂着）。
               if (d.names) setNames(d.names)
               setDrafts(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = null; return n })()) })
-              // 保存内容成功即收起（编辑→保存→折回）；恢复默认（清空）保持
-              // 展开——用户要看回厂结果；失败保持展开等用户处理。
-              if (text.trim() !== '') {
-                setOpen(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = false; return n })()) })
-              }
+              // 折叠纯手动（▾/▸）——保存/恢复默认都不自动收，用户自己控制
+              // 展开态；失败本来就保持展开。
               // 清空保存=重置：host 删了卡面文件，本地同步隐藏（避免 404 重试）。
               if (text.trim() === '') {
                 setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) })
