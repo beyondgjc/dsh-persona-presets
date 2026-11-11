@@ -42,27 +42,43 @@ window.__ModuleLoader__.load({
       'persona-598-custom-3': '墨隐',
     }
 
-    // Theme-neutral: inherit foreground, translucent borders — readable on
-    // both the host's dark and light themes without a design system.
-    var card = { border: '1px solid rgba(127,127,127,.35)', borderRadius: 10, padding: '10px 14px 12px', margin: '10px 0' }
-    var cardTitle = { fontWeight: 700, fontSize: 14, margin: '2px 0 8px' }
-    var row = { display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0', fontSize: 13, flexWrap: 'wrap' }
-    var muted = { color: 'rgba(127,127,127,.9)', fontSize: 12 }
-    var inputStyle = {
-      border: '1px solid rgba(127,127,127,.4)', borderRadius: 6,
-      background: 'transparent', color: 'inherit', font: 'inherit',
-    }
-    var textareaStyle = Object.assign({}, inputStyle, { width: '100%', height: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, padding: '6px 8px' })
-    function btnStyle(variant) {
-      var base = { border: '1px solid rgba(127,127,127,.4)', borderRadius: 6, cursor: 'pointer', font: 'inherit', fontSize: 12, padding: '3px 12px', background: 'transparent', color: 'inherit' }
-      if (variant === 'primary') return Object.assign(base, { fontWeight: 700, borderColor: 'rgba(124,108,240,.6)' })
-      return base
-    }
+    // Theme-neutral design tokens: inherit foreground, translucent surfaces —
+    // readable on both the host's dark and light themes. Static styling rides
+    // a pps-* class layer (hover/focus/transition need pseudo-classes, which
+    // inline styles cannot express); layout-critical values stay inline.
+    var STYLE_CSS = [
+      '.pps-card{border:1px solid rgba(127,127,127,.22);border-radius:12px;padding:12px 16px 14px;margin:10px 0;background:rgba(127,127,127,.04)}',
+      '.pps-title{font-weight:700;font-size:14px;margin:2px 0 10px;letter-spacing:.2px}',
+      '.pps-sub{font-size:11px;font-weight:400;color:rgba(127,127,127,.85)}',
+      '.pps-row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px;flex-wrap:wrap}',
+      '.pps-muted{color:rgba(127,127,127,.85);font-size:12px}',
+      '.pps-hint{margin:6px 0 2px;color:rgba(127,127,127,.85);font-size:12px;line-height:1.5}',
+      '.pps-fold{display:flex;align-items:center;gap:10px;padding:6px 8px;margin:0 -8px 6px;border-radius:8px;cursor:pointer;transition:background .15s ease;flex-wrap:wrap}',
+      '.pps-fold:hover{background:rgba(127,127,127,.08)}',
+      '.pps-chevron{display:inline-block;width:14px;text-align:center;font-weight:700;font-size:11px;opacity:.8;transition:transform .15s ease}',
+      '.pps-chevron-open{transform:rotate(90deg)}',
+      '.pps-input{border:1px solid rgba(127,127,127,.35);border-radius:8px;background:transparent;color:inherit;font:inherit;transition:border-color .15s ease,box-shadow .15s ease}',
+      '.pps-input:hover{border-color:rgba(127,127,127,.55)}',
+      '.pps-input:focus{outline:none;border-color:rgba(124,108,240,.7);box-shadow:0 0 0 2px rgba(124,108,240,.18)}',
+      '.pps-name-input{width:170px;font-weight:700}',
+      '.pps-textarea{width:100%;height:100%;box-sizing:border-box;resize:vertical;line-height:1.6;padding:8px 10px}',
+      '.pps-btn{border:1px solid rgba(127,127,127,.4);border-radius:8px;cursor:pointer;font:inherit;font-size:12px;padding:4px 14px;background:transparent;color:inherit;display:inline-flex;align-items:center;transition:background .15s ease,border-color .15s ease,opacity .15s ease}',
+      '.pps-btn:hover{background:rgba(127,127,127,.1);border-color:rgba(127,127,127,.6)}',
+      '.pps-btn:disabled{opacity:.45;cursor:default}',
+      '.pps-btn:disabled:hover{background:transparent;border-color:rgba(127,127,127,.4)}',
+      '.pps-btn-primary{font-weight:700;border-color:rgba(124,108,240,.55)}',
+      '.pps-btn-primary:hover{background:rgba(124,108,240,.14);border-color:rgba(124,108,240,.8)}',
+      '.pps-avatar{width:120px;max-height:260px;object-fit:contain;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:rgba(127,127,127,.06);flex:0 0 auto;align-self:flex-start}',
+      '.pps-count{color:rgba(127,127,127,.85);font-size:12px}',
+      '.pps-count-over{color:#ff7369;font-size:12px;font-weight:600}',
+      '.pps-warn{color:#e8b268;font-size:12px;background:rgba(232,178,104,.1);border:1px solid rgba(232,178,104,.3);border-radius:999px;padding:2px 10px}',
+      '.pps-msg{margin:4px 0;color:rgba(127,127,127,.85);font-size:12px}',
+    ].join('\n')
     function Section(props) {
-      return h('div', { style: card }, h('div', { style: cardTitle }, props.title), props.children)
+      return h('div', { className: 'pps-card' }, h('div', { className: 'pps-title' }, props.title), props.children)
     }
     function Hint(props) {
-      return h('div', { style: Object.assign({ margin: '6px 0 2px' }, muted) }, props.children)
+      return h('div', { className: 'pps-hint' }, props.children)
     }
 
     // ── 角色卡导入（本机解析，文件不过服务器）────────────────────────
@@ -332,8 +348,9 @@ window.__ModuleLoader__.load({
       }
 
       return h('div', null,
+        h('style', null, STYLE_CSS),
         h(Section, { title: h('span', null, '角色卡 ',
-          h('span', { style: { fontSize: 11, fontWeight: 400, color: 'rgba(127,127,127,.9)' } }, '每个预设一张卡 · 点 ▾ 展开编辑 · 保存后下一回合生效')) },
+          h('span', { className: 'pps-sub' }, '每个预设一张卡 · 点 ▾ 展开编辑 · 保存后下一回合生效')) },
           SLOT_IDS.map(function (presetId) {
             var hasSlot = slots !== null && slots[presetId] !== undefined && slots[presetId] !== null
             if (slots !== null && !hasSlot) return null // older host: degrade the whole slot
@@ -352,16 +369,17 @@ window.__ModuleLoader__.load({
             // 折叠头照 agentic-pet 人设区最新形态：[▾/▸] + 取名框（uncontrolled
             // + key 钉生效名，改名后重挂回填）+ 对应预设内置名。清空名字恢复
             // 内置名；徽记（默认卡/独立卡）已判无用删除。
-            var header = h('div', { style: Object.assign({}, row, { marginBottom: 4 }) },
-              h('button', { type: 'button', onClick: toggle, 'aria-expanded': isOpen, title: isOpen ? '收起' : '展开编辑',
-                style: { border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: '2px 4px', fontWeight: 700, font: 'inherit' } },
-                isOpen ? '▾' : '▸'),
-              h('input', { key: 'pname-' + displayName, style: Object.assign({}, inputStyle, { width: 170, fontWeight: 700 }), defaultValue: displayName, title: '给这张卡取名；点击空白处或回车生效；清空恢复内置名',
+            // 折叠头：整行可点（取名框 stopPropagation 不触发折叠）——
+            // [旋转箭头] + 取名框（uncontrolled + key 钉生效名）+ 对应预设。
+            var header = h('div', { className: 'pps-fold', onClick: toggle, role: 'button', 'aria-expanded': isOpen, title: isOpen ? '收起' : '展开编辑' },
+              h('span', { className: isOpen ? 'pps-chevron pps-chevron-open' : 'pps-chevron', 'aria-hidden': true }, '▸'),
+              h('input', { key: 'pname-' + displayName, className: 'pps-input pps-name-input', defaultValue: displayName, title: '给这张卡取名；点击空白处或回车生效；清空恢复内置名',
+                onClick: function (e) { e.stopPropagation() },
                 onBlur: function (e) { commitPresetName(presetId, e.target.value) },
                 onKeyDown: function (e) { if (e.key === 'Enter') { commitPresetName(presetId, e.target.value); e.target.blur() } },
                 'aria-label': '卡名 · ' + presetId }),
-              h('span', { style: muted }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)),
-              hasDraft && !isOpen ? h('span', { style: { color: '#e8b268', fontSize: 12 } }, '有未保存草稿') : null)
+              h('span', { className: 'pps-muted' }, '对应预设：' + (SLOT_LABELS[presetId] || presetId)),
+              hasDraft && !isOpen ? h('span', { className: 'pps-warn' }, '有未保存草稿') : null)
             if (!isOpen) return h('div', { key: presetId, style: { marginBottom: 10 } }, header)
             // 编辑区：卡面图（有则展示）在左，内容 textarea 在右——图只是
             // 装饰（host 存 characters/<presetId>.png，不进 prompt），404 时
@@ -370,17 +388,17 @@ window.__ModuleLoader__.load({
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
               // flex 默认 stretch：有图时 textarea 容器拉伸到与图片等高
-              // （height:100% 生效）；无图时高度由 minHeight 260 决定。
+              // （height:100% 生效）；无图时高度由 wrapper minHeight 决定。
               h('div', { style: { display: 'flex', gap: 10, alignItems: 'stretch' } },
                 avatarFail[presetId] !== true ? h('img', {
                   src: avatarSrc,
                   alt: '卡面',
-                  style: { width: 120, maxHeight: 260, objectFit: 'contain', borderRadius: 6, border: '1px solid rgba(127,127,127,.35)', background: 'rgba(127,127,127,.06)', flex: '0 0 auto', alignSelf: 'flex-start' },
+                  className: 'pps-avatar',
                   onError: function () { setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) }) },
                 }) : null,
                 h('div', { style: { flex: '1 1 auto', minWidth: 0, minHeight: 260 } },
                   h('textarea', {
-                    style: textareaStyle,
+                    className: 'pps-input pps-textarea',
                     value: text,
                     placeholder: slots && slots[presetId] ? slots[presetId].default : '',
                     onChange: function (e) {
@@ -388,23 +406,23 @@ window.__ModuleLoader__.load({
                     },
                     'aria-label': '角色卡文本 · ' + displayName,
                   }))),
-              h('div', { style: row },
+              h('div', { className: 'pps-row' },
                 h('button', {
-                  style: btnStyle('primary'), disabled: busy || draft === null || draft === undefined,
+                  className: 'pps-btn pps-btn-primary', disabled: busy || draft === null || draft === undefined,
                   onClick: function () { save(presetId, text) },
                 }, '保存角色卡'),
-                h('button', { style: btnStyle(), disabled: busy, onClick: function () { save(presetId, '') } }, '恢复默认'),
+                h('button', { className: 'pps-btn', disabled: busy, onClick: function () { save(presetId, '') } }, '恢复默认'),
                 // label 包住隐藏 file input：原生触发文件选择，无需 ref。
-                h('label', { style: Object.assign({}, btnStyle(), { display: 'inline-flex', alignItems: 'center' }), title: '导入 .md/.txt/.json 或角色卡 PNG（SillyTavern 格式，解析在本机完成）' },
+                h('label', { className: 'pps-btn', title: '导入 .md/.txt/.json 或角色卡 PNG（SillyTavern 格式，解析在本机完成）' },
                   '导入',
                   h('input', {
                     type: 'file', accept: '.md,.txt,.json,.png', style: { display: 'none' },
                     onChange: function (e) { handleImport(presetId, e.target.files && e.target.files[0]); e.target.value = '' },
                   })),
-                h('span', { style: count > max ? { color: '#ff7369', fontSize: 12 } : muted }, String(count) + ' / ' + String(max) + ' 字'),
-                count > SOFT_WARN_CHARS ? h('span', { style: { color: '#e8b268', fontSize: 12 } }, '⚠ 每回合注入 prompt，注意 token 消耗') : null))
+                h('span', { className: count > max ? 'pps-count-over' : 'pps-count' }, String(count) + ' / ' + String(max) + ' 字'),
+                count > SOFT_WARN_CHARS ? h('span', { className: 'pps-warn' }, '每回合注入 prompt，注意 token 消耗') : null))
           }),
-          msg ? h('div', { style: Object.assign({ margin: '4px 0' }, muted) }, msg) : null,
+          msg ? h('div', { className: 'pps-msg' }, msg) : null,
           h(Hint, null, '每个预设一张角色卡：把会话挂到对应预设（人设-自定义1/2/3），它就带这张卡。卡片就是你给它设定的人设。'),
           h(Hint, null, '清空并保存即回到默认卡；改动下一次对话就生效，无需重启。')))
     }
