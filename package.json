@@ -1,7 +1,7 @@
 {
   "name": "dsh-persona-presets",
   "description": "Persona presets: a set of custom agent presets, one editable character card each, edited from the settings page",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publishConfig": {
     "access": "public"
   },
