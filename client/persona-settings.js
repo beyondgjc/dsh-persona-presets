@@ -52,7 +52,7 @@ window.__ModuleLoader__.load({
       border: '1px solid rgba(127,127,127,.4)', borderRadius: 6,
       background: 'transparent', color: 'inherit', font: 'inherit',
     }
-    var textareaStyle = Object.assign({}, inputStyle, { width: '100%', minHeight: 96, resize: 'vertical', lineHeight: 1.5, padding: '6px 8px' })
+    var textareaStyle = Object.assign({}, inputStyle, { width: '100%', height: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, padding: '6px 8px' })
     function btnStyle(variant) {
       var base = { border: '1px solid rgba(127,127,127,.4)', borderRadius: 6, cursor: 'pointer', font: 'inherit', fontSize: 12, padding: '3px 12px', background: 'transparent', color: 'inherit' }
       if (variant === 'primary') return Object.assign(base, { fontWeight: 700, borderColor: 'rgba(124,108,240,.6)' })
@@ -369,14 +369,16 @@ window.__ModuleLoader__.load({
             var avatarSrc = AVATAR_GET + presetId + (avatarBust[presetId] ? '?t=' + avatarBust[presetId] : '')
             return h('div', { key: presetId, style: { marginBottom: 14 } },
               header,
-              h('div', { style: { display: 'flex', gap: 10, alignItems: 'flex-start' } },
+              // flex 默认 stretch：有图时 textarea 容器拉伸到与图片等高
+              // （height:100% 生效）；无图时高度由 minHeight 260 决定。
+              h('div', { style: { display: 'flex', gap: 10, alignItems: 'stretch' } },
                 avatarFail[presetId] !== true ? h('img', {
                   src: avatarSrc,
                   alt: '卡面',
                   style: { width: 120, maxHeight: 260, objectFit: 'contain', borderRadius: 6, border: '1px solid rgba(127,127,127,.35)', background: 'rgba(127,127,127,.06)', flex: '0 0 auto', alignSelf: 'flex-start' },
                   onError: function () { setAvatarFail(function (prev) { return Object.assign({}, prev, (function () { var n = {}; n[presetId] = true; return n })()) }) },
                 }) : null,
-                h('div', { style: { flex: '1 1 auto', minWidth: 0 } },
+                h('div', { style: { flex: '1 1 auto', minWidth: 0, minHeight: 260 } },
                   h('textarea', {
                     style: textareaStyle,
                     value: text,
