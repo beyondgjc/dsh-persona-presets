@@ -35,3 +35,4 @@ npm run typecheck   # tsc --noEmit
 8. **npm 源坑**：本机默认源是 npmmirror（只读镜像）——装包可以，发布必须显式 `--registry https://registry.npmjs.org`；js-yaml 停在 ^4.3.2（5.5.0 在镜像是假包）。
 9. **vendor 部署 = rm -rf 后整目录拷**：tsdown 的 chunk 文件名带内容哈希，`cp -r lib DST/` 在目标已存在时是**合并**——新旧 chunk 混杂后 index.js 引用的 chunk 可能缺失，载入即炸。必须 `rm -rf DST/lib && cp -r`，然后逐文件 cmp 复核。
 10. **注册面全家桶 -598**：cordis 插件名/设置区块 slot id/API 路由/预设 id/存储目录全部带 `-598`（whale598 纪律）——cordis 重名、slot 机同 id 同 priority、webserver 重复路径三者都会 throw，改任何一处身份时同步检查 AGENTS 其余各处。
+11. **并行窗口协作**：跨仓协作纪律以 `dsh-agentic-pet/AGENTS.md §11` 为准（部署循环单源/动笔先树外快照/恢复基于最新 HEAD/「污染」先查 git log 全序/终验择隙/宿主重启窗口）——本仓 vendor 部署同样遵守（铁律 9 是它的子集）。
