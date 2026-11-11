@@ -33,12 +33,12 @@ window.__ModuleLoader__.load({
       'persona-598-custom-3': '人设-自定义3',
     }
 
-    // 三槽开箱各带一张预制人设（槽1=鲸鱼娘/2=黑客/3=侠客，文案真源在宿主
+    // 三槽开箱各带一张预制人设（槽1=鲸鱼娘/2=病娇/3=侠客，文案真源在宿主
     // src/preset-cards.ts，经 readPersonaCard 回落链生效）；未取名时槽名
     // 默认显示对应人设名——与 preset-cards.ts 的 label 手工对齐。
     var SLOT_PERSONA_NAMES = {
       'persona-598-custom-1': '鲸鱼娘',
-      'persona-598-custom-2': '零',
+      'persona-598-custom-2': '病娇',
       'persona-598-custom-3': '墨隐',
     }
 
@@ -206,7 +206,7 @@ window.__ModuleLoader__.load({
       }
       useEffect(refresh, [])
 
-      // 人设槽显示名：用户取名优先 → 人设名（鲸鱼娘/零/墨隐）→ 内置预设名。
+      // 人设槽显示名：用户取名优先 → 人设名（鲸鱼娘/病娇/墨隐）→ 内置预设名。
       var presetNameOf = function (presetId) {
         var custom = names && names[presetId]
         if (custom) return String(custom)
